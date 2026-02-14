@@ -1289,13 +1289,12 @@
                 const toY = hqPoint.y;
                 
                 // Random bend direction
-                const bendArray = [true, false];
+                const bendArray = [1, -1];
                 const bendDirection = bendArray[Math.floor(Math.random() * bendArray.length)];
                 
                 // Calculate bend based on distance
                 const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
-                let bend = Math.min(distance * 0.3, 150);
-                if (!bendDirection) bend = -bend; // Negative bend for opposite direction
+                const bend = Math.min(distance * 0.3, 150) * bendDirection;
 
                 // Create line data with curved midpoint
                 const lineData = [
