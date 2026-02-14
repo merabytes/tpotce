@@ -595,6 +595,268 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
     <script>
+        /**
+         * T-Pot Attack Map Dashboard
+         * Enhanced UI and data visualization functionality
+         */
+
+        /**
+         * Attack Cache Manager
+         * Handles persistent storage of attack events using IndexedDB with LocalStorage fallback
+         */
+        class AttackCache {
+            constructor() {
+                this.dbName = 'TPotAttackCache';
+                this.storeName = 'attacks';
+                this.version = 1;
+                this.retentionPeriod = 24 * 60 * 60 * 1000; // 24 hours
+                this.maxEvents = 10000; // Performance/memory limit
+                this.cleanupInterval = 5 * 60 * 1000; // Cleanup every 5 minutes
+                this.storageType = null;
+                this.db = null;
+                this.localStorageKey = 'tpot_attack_cache';
+            }
+
+            async init() {
+                console.log('[CACHE] Initializing attack cache...');
+                try {
+                    await this.initIndexedDB();
+                    this.storageType = 'indexeddb';
+                    console.log('[CACHE] Using IndexedDB for storage');
+                } catch (error) {
+                    console.warn('[CACHE] IndexedDB failed, falling back to LocalStorage:', error);
+                    this.initLocalStorage();
+                    this.storageType = 'localstorage';
+                    console.log('[CACHE] Using LocalStorage for storage');
+                }
+
+                // Start periodic cleanup
+                setInterval(() => {
+                    this.cleanup();
+                }, this.cleanupInterval);
+
+                console.log(`[CACHE] Cache initialized with ${this.storageType}, retention: 24h`);
+            }
+
+            async initIndexedDB() {
+                return new Promise((resolve, reject) => {
+                    if (!window.indexedDB) {
+                        reject(new Error('IndexedDB not supported'));
+                        return;
+                    }
+
+                    const request = indexedDB.open(this.dbName, this.version);
+                    
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve();
+                    };
+
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        
+                        // Create attacks object store if it doesn't exist
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            const store = db.createObjectStore(this.storeName, { 
+                                keyPath: 'id',
+                                autoIncrement: true 
+                            });
+                            
+                            // Create index on timestamp for efficient cleanup queries
+                            store.createIndex('timestamp', 'timestamp', { unique: false });
+                            store.createIndex('source_ip', 'src_ip', { unique: false });
+                            store.createIndex('honeypot', 'honeypot', { unique: false });
+                        }
+                    };
+                });
+            }
+
+            initLocalStorage() {
+                // LocalStorage is synchronous, just verify it's available
+                if (!window.localStorage) {
+                    throw new Error('LocalStorage not supported');
+                }
+                
+                // Initialize empty cache if doesn't exist
+                if (!localStorage.getItem(this.localStorageKey)) {
+                    const emptyCache = {
+                        events: [],
+                        lastCleanup: Date.now(),
+                        version: 1
+                    };
+                    localStorage.setItem(this.localStorageKey, JSON.stringify(emptyCache));
+                }
+            }
+
+            async storeEvent(event) {
+                // Add timestamp and unique ID if not present
+                const eventToStore = {
+                    ...event,
+                    timestamp: Date.now(),
+                    cached_at: Date.now()
+                };
+
+                if (this.storageType === 'indexeddb') {
+                    return this.storeInIndexedDB(eventToStore);
+                } else {
+                    return this.storeInLocalStorage(eventToStore);
+                }
+            }
+
+            async storeInIndexedDB(event) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    const request = store.add(event);
+
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            storeInLocalStorage(event) {
+                try {
+                    const cache = JSON.parse(localStorage.getItem(this.localStorageKey));
+                    cache.events.push(event);
+                    
+                    // Limit cache size
+                    if (cache.events.length > this.maxEvents) {
+                        cache.events = cache.events.slice(-this.maxEvents);
+                    }
+                    
+                    localStorage.setItem(this.localStorageKey, JSON.stringify(cache));
+                    return Promise.resolve();
+                } catch (error) {
+                    console.error('[CACHE] LocalStorage store failed:', error);
+                    return Promise.reject(error);
+                }
+            }
+
+            async getRecentEvents(limit = 100) {
+                if (this.storageType === 'indexeddb') {
+                    return this.getFromIndexedDB(limit);
+                } else {
+                    return this.getFromLocalStorage(limit);
+                }
+            }
+
+            async getFromIndexedDB(limit) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([this.storeName], 'readonly');
+                    const store = transaction.objectStore(this.storeName);
+                    const index = store.index('timestamp');
+                    const request = index.openCursor(null, 'prev');
+                    
+                    const results = [];
+                    request.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor && results.length < limit) {
+                            results.push(cursor.value);
+                            cursor.continue();
+                        } else {
+                            resolve(results);
+                        }
+                    };
+                    
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            getFromLocalStorage(limit) {
+                try {
+                    const cache = JSON.parse(localStorage.getItem(this.localStorageKey));
+                    return Promise.resolve(cache.events.slice(-limit).reverse());
+                } catch (error) {
+                    console.error('[CACHE] LocalStorage read failed:', error);
+                    return Promise.resolve([]);
+                }
+            }
+
+            async cleanup() {
+                const cutoffTime = Date.now() - this.retentionPeriod;
+                console.log(`[CACHE] Running cleanup, removing events older than ${new Date(cutoffTime).toISOString()}`);
+                
+                if (this.storageType === 'indexeddb') {
+                    return this.cleanupIndexedDB(cutoffTime);
+                } else {
+                    return this.cleanupLocalStorage(cutoffTime);
+                }
+            }
+
+            async cleanupIndexedDB(cutoffTime) {
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    const index = store.index('timestamp');
+                    const range = IDBKeyRange.upperBound(cutoffTime);
+                    const request = index.openCursor(range);
+                    
+                    let deletedCount = 0;
+                    request.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            cursor.delete();
+                            deletedCount++;
+                            cursor.continue();
+                        } else {
+                            console.log(`[CACHE] Cleanup complete, deleted ${deletedCount} events`);
+                            resolve(deletedCount);
+                        }
+                    };
+                    
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            cleanupLocalStorage(cutoffTime) {
+                try {
+                    const cache = JSON.parse(localStorage.getItem(this.localStorageKey));
+                    const initialCount = cache.events.length;
+                    cache.events = cache.events.filter(event => event.timestamp > cutoffTime);
+                    cache.lastCleanup = Date.now();
+                    localStorage.setItem(this.localStorageKey, JSON.stringify(cache));
+                    
+                    const deletedCount = initialCount - cache.events.length;
+                    console.log(`[CACHE] Cleanup complete, deleted ${deletedCount} events`);
+                    return Promise.resolve(deletedCount);
+                } catch (error) {
+                    console.error('[CACHE] LocalStorage cleanup failed:', error);
+                    return Promise.reject(error);
+                }
+            }
+
+            async clear() {
+                console.log('[CACHE] Clearing all cached events');
+                
+                if (this.storageType === 'indexeddb') {
+                    return new Promise((resolve, reject) => {
+                        const transaction = this.db.transaction([this.storeName], 'readwrite');
+                        const store = transaction.objectStore(this.storeName);
+                        const request = store.clear();
+                        
+                        request.onsuccess = () => {
+                            console.log('[CACHE] IndexedDB cleared');
+                            resolve();
+                        };
+                        request.onerror = () => reject(request.error);
+                    });
+                } else {
+                    const emptyCache = {
+                        events: [],
+                        lastCleanup: Date.now(),
+                        version: 1
+                    };
+                    localStorage.setItem(this.localStorageKey, JSON.stringify(emptyCache));
+                    console.log('[CACHE] LocalStorage cleared');
+                    return Promise.resolve();
+                }
+            }
+        }
+
+        // Initialize cache
+        const attackCache = new AttackCache();
+
         // Initialize Leaflet Map
         const map = L.map('map', {
             center: [20, 0],
@@ -823,6 +1085,11 @@
             // Log webhook data to console for demo purposes
             console.log('📡 Webhook Data:', webhookData);
 
+            // Store in cache
+            attackCache.storeEvent(webhookData).catch(error => {
+                console.error('[CACHE] Failed to store event:', error);
+            });
+
             // Update statistics
             stats['1m']++;
             stats['1h']++;
@@ -839,7 +1106,7 @@
             addAttackToList(webhookData, protocol);
             updateTopAttackers();
 
-            // Create visual attack
+            // Create visual attack line animation
             createAttackLine(webhookData.src_lat, webhookData.src_long, webhookData.dst_lat, webhookData.dst_long, webhookData.color);
 
             // Store in history
@@ -916,7 +1183,7 @@
         }
 
         // Start the simulation after page load
-        setTimeout(() => {
+        setTimeout(async () => {
             // Hide loading screen
             const loadingScreen = document.getElementById('loading-screen');
             loadingScreen.classList.add('hidden');
@@ -925,9 +1192,39 @@
             console.log('📊 Simulating honeypot attacks with mock data');
             console.log('🗺️  Using Leaflet.js for mapping');
             console.log('📈 Using D3.js for attack line animations');
+            console.log('💾 Initializing attack cache...');
+            
+            // Initialize attack cache
+            try {
+                await attackCache.init();
+                
+                // Try to restore recent cached events
+                const cachedEvents = await attackCache.getRecentEvents(20);
+                if (cachedEvents.length > 0) {
+                    console.log(`[CACHE] Restored ${cachedEvents.length} cached events`);
+                    // Display cached events in the sidebar
+                    cachedEvents.forEach(event => {
+                        const protocol = protocols.find(p => p.name === event.protocol) || protocols[0];
+                        addAttackToList(event, protocol);
+                        
+                        // Update country stats from cache
+                        if (!countryStats[event.country]) {
+                            countryStats[event.country] = 0;
+                        }
+                        countryStats[event.country]++;
+                    });
+                    updateTopAttackers();
+                }
+            } catch (error) {
+                console.error('[CACHE] Failed to initialize:', error);
+            }
+            
             console.log('');
             console.log('This demo simulates WebSocket data that would normally come from:');
             console.log('  Honeypots → Elasticsearch → DataServer → Redis → AttackMapServer → Browser');
+            console.log('📡 Attack events are cached in IndexedDB/LocalStorage for 24 hours');
+            console.log('🔄 Cache cleanup runs every 5 minutes');
+            
             startAttackSimulation();
         }, 2000);
 
