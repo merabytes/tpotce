@@ -1012,9 +1012,10 @@
             maxZoom: 20
         }).addTo(map);
 
-        // Layer groups for markers and lines
-        const attackLines = L.layerGroup().addTo(map);
+        // Layer groups for circles, markers and attack lines
+        const circles = L.layerGroup().addTo(map);
         const markers = L.layerGroup().addTo(map);
+        const attackLines = L.layerGroup().addTo(map);
 
         // Mock data sources - Common attacker locations with ISO codes
         const attackSources = [
@@ -1132,7 +1133,7 @@
                     weight: 2,
                     opacity: 0.6,
                     fillOpacity: 0.2
-                }).addTo(markers);
+                }).addTo(circles);
 
                 circle.bindPopup(`
                     <div style="padding: 0.5rem;">
@@ -1151,7 +1152,7 @@
 
                 // Remove circle after animation
                 setTimeout(() => {
-                    markers.removeLayer(circle);
+                    circles.removeLayer(circle);
                     resolve();
                 }, 4000);
             });
@@ -1301,6 +1302,103 @@
                     resolve();
                 }, 2500 + (numParticles * 200));
             });
+        }
+
+        // Create comprehensive attack visualization with all animations
+        function createAttackLine(srcLat, srcLng, dstLat, dstLng, color, webhookData) {
+            const srcLatLng = L.latLng(srcLat, srcLng);
+            const dstLatLng = L.latLng(dstLat, dstLng);
+            const srcPoint = map.latLngToLayerPoint(srcLatLng);
+            const dstPoint = map.latLngToLayerPoint(dstLatLng);
+
+            // Execute all animations in parallel
+            Promise.all([
+                addCircle(webhookData.country, webhookData.iso_code, webhookData.src_ip, webhookData.ip_rep, color, srcLatLng, webhookData.protocol),
+                addMarker(webhookData.dst_country_name, webhookData.dst_iso_code, webhookData.dst_ip, webhookData.tpot_hostname, dstLatLng),
+                handleParticle(color, srcPoint),
+                handleTraffic(color, srcPoint, dstPoint, srcLatLng)
+            ]).then(() => {
+                console.log('✅ Attack animation complete');
+            });
+
+            // Draw the main attack line on attackLines layer
+            const svg = d3.select(map.getPanes().overlayPane).append("svg")
+                .attr("class", "attack-line-svg")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("width", "100%")
+                .style("height", "100%")
+                .style("pointer-events", "none")
+                .style("z-index", "400");
+
+            // Create curved path
+            const midX = (srcPoint.x + dstPoint.x) / 2;
+            const midY = Math.min(srcPoint.y, dstPoint.y) - 100;
+            
+            const path = svg.append("path")
+                .attr("d", `M ${srcPoint.x},${srcPoint.y} Q ${midX},${midY} ${dstPoint.x},${dstPoint.y}`)
+                .attr("stroke", color)
+                .attr("stroke-width", 3)
+                .attr("fill", "none")
+                .attr("opacity", 0)
+                .attr("stroke-dasharray", "1000")
+                .attr("stroke-dashoffset", "1000")
+                .style("filter", `drop-shadow(0 0 3px ${color})`);
+
+            // Animate the line
+            path.transition()
+                .duration(200)
+                .attr("opacity", 0.8)
+                .transition()
+                .duration(1500)
+                .attr("stroke-dashoffset", 0)
+                .on("end", function() {
+                    // Fade out after animation
+                    d3.select(this).transition()
+                        .delay(500)
+                        .duration(500)
+                        .attr("opacity", 0)
+                        .on("end", function() {
+                            svg.remove();
+                        });
+                });
+
+            // Add persistent source marker with detailed popup
+            const sourceMarker = L.circleMarker([srcLat, srcLng], {
+                radius: 5,
+                fillColor: color,
+                color: '#fff',
+                weight: 1,
+                opacity: 0.8,
+                fillOpacity: 0.6
+            }).addTo(markers);
+
+            sourceMarker.bindPopup(`
+                <div style="padding: 0.5rem;">
+                    <strong style="color: ${color}; font-size: 1.1rem;">⚠️ Attack Source</strong><br>
+                    <table class="popup-table" style="margin-top: 0.5rem;">
+                        <tr><td>Country:</td><td>${webhookData.country}</td></tr>
+                        <tr><td>Source IP:</td><td>${webhookData.src_ip}</td></tr>
+                        <tr><td>Source Port:</td><td>${webhookData.src_port}</td></tr>
+                        <tr><td>IP Reputation:</td><td>${webhookData.ip_rep}</td></tr>
+                        <tr><td>Protocol:</td><td>${webhookData.protocol}</td></tr>
+                        <tr><td>Honeypot:</td><td>${webhookData.honeypot}</td></tr>
+                        <tr><td>Target:</td><td>${webhookData.dst_ip}:${webhookData.dst_port}</td></tr>
+                        <tr><td>Destination:</td><td>${webhookData.dst_country_name}</td></tr>
+                        <tr><td>Hostname:</td><td>${webhookData.tpot_hostname}</td></tr>
+                        <tr><td>Event Count:</td><td>#${webhookData.event_count}</td></tr>
+                    </table>
+                </div>
+            `, {
+                maxWidth: 350,
+                className: 'attack-popup'
+            });
+
+            // Remove marker after a while
+            setTimeout(() => {
+                markers.removeLayer(sourceMarker);
+            }, 5000);
         }
 
         // Simulate attack event using T-Pot webhook data structure
