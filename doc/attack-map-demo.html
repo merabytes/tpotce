@@ -393,172 +393,7 @@
             border-bottom: none;
         }
 
-        /* Sidebar Panel */
-        .side-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 350px;
-            max-height: calc(100vh - 120px);
-            background: rgba(26, 26, 26, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-primary);
-            border-radius: var(--radius-md);
-            z-index: 900;
-            overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
-
-        .panel-content {
-            padding: var(--spacing-lg);
-        }
-
-        .panel-section {
-            margin-bottom: var(--spacing-lg);
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-sm);
-            margin-bottom: var(--spacing-md);
-            padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--border-primary);
-        }
-
-        .section-header i {
-            color: var(--primary-color);
-            font-size: var(--font-md);
-        }
-
-        .section-header h3 {
-            font-size: var(--font-md);
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-        }
-
-        .demo-notice {
-            background: rgba(255, 193, 7, 0.15);
-            border: 1px solid rgba(255, 193, 7, 0.4);
-            color: #ffc107;
-            padding: var(--spacing-sm) var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-lg);
-            font-size: var(--font-xs);
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-        }
-
-        /* Attack List */
-        .attack-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .attack-item {
-            background: rgba(226, 0, 116, 0.05);
-            border-left: 3px solid;
-            padding: var(--spacing-sm) var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-            border-radius: var(--radius-md);
-            font-size: var(--font-xs);
-            animation: slideIn 0.3s ease-out;
-            transition: all 0.15s ease;
-        }
-
-        .attack-item:hover {
-            background: rgba(226, 0, 116, 0.1);
-            transform: translateX(-2px);
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* Protocol color coding */
-        .attack-item.ssh { border-left-color: #ff6b6b; }
-        .attack-item.http { border-left-color: #4dabf7; }
-        .attack-item.ftp { border-left-color: #ffd93d; }
-        .attack-item.telnet { border-left-color: #a78bfa; }
-        .attack-item.rdp { border-left-color: #ff8fab; }
-        .attack-item.vnc { border-left-color: #0000FF; }
-        .attack-item.smb { border-left-color: #9c27b0; }
-        .attack-item.sip { border-left-color: #00bcd4; }
-
-        .protocol-badge {
-            display: inline-block;
-            padding: 0.15rem 0.5rem;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 0.25rem;
-        }
-
-        .badge-ssh { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
-        .badge-http { background: rgba(77, 171, 247, 0.2); color: #4dabf7; }
-        .badge-ftp { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
-        .badge-telnet { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
-        .badge-rdp { background: rgba(255, 143, 171, 0.2); color: #ff8fab; }
-        .badge-vnc { background: rgba(0, 0, 255, 0.2); color: #0000FF; }
-        .badge-smb { background: rgba(156, 39, 176, 0.2); color: #9c27b0; }
-        .badge-sip { background: rgba(0, 188, 212, 0.2); color: #00bcd4; }
-
-        .attack-item strong {
-            color: var(--primary-color);
-            font-weight: 600;
-        }
-
-        .attack-item .time {
-            color: var(--text-muted);
-            font-size: 0.7rem;
-            display: block;
-            margin-top: 0.25rem;
-        }
-
-        /* Top Attackers */
-        .top-attackers {
-            margin-top: var(--spacing-lg);
-        }
-
-        .top-attacker-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: var(--spacing-sm) var(--spacing-md);
-            margin-bottom: var(--spacing-sm);
-            background: rgba(226, 0, 116, 0.05);
-            border-radius: var(--radius-md);
-            font-size: var(--font-xs);
-            transition: all 0.15s ease;
-        }
-
-        .top-attacker-item:hover {
-            background: rgba(226, 0, 116, 0.1);
-        }
-
-        .top-attacker-item .country {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        .top-attacker-item .count {
-            color: var(--primary-color);
-            font-weight: 700;
-            font-family: var(--font-mono);
-        }
+        /* Side panel removed */
 
         /* Leaflet Popup Customization */
         .leaflet-popup-content-wrapper {
@@ -572,31 +407,8 @@
             background: rgba(26, 26, 26, 0.98);
         }
 
-        /* Custom Scrollbar */
-        .side-panel::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .side-panel::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 3px;
-        }
-
-        .side-panel::-webkit-scrollbar-thumb {
-            background: var(--primary-color);
-            border-radius: 3px;
-        }
-
-        .side-panel::-webkit-scrollbar-thumb:hover {
-            background: var(--primary-hover);
-        }
-
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .side-panel {
-                width: 300px;
-            }
-            
             .navbar-stats {
                 display: none;
             }
@@ -660,36 +472,6 @@
     <div class="main-container">
         <div id="map-container">
             <div id="map"></div>
-            
-            <!-- Side Panel -->
-            <div class="side-panel">
-                <div class="panel-content">
-                    <div class="demo-notice">
-                        <i class="fas fa-info-circle"></i>
-                        <span>Demo Mode - Simulated Attack Data</span>
-                    </div>
-                    
-                    <div class="panel-section">
-                        <div class="section-header">
-                            <i class="fas fa-bolt"></i>
-                            <h3>Recent Attacks</h3>
-                        </div>
-                        <ul class="attack-list" id="attack-list">
-                            <!-- Attack items will be added here dynamically -->
-                        </ul>
-                    </div>
-
-                    <div class="panel-section top-attackers">
-                        <div class="section-header">
-                            <i class="fas fa-ranking-star"></i>
-                            <h3>Top Attackers</h3>
-                        </div>
-                        <div id="top-attackers-list">
-                            <!-- Top attackers will be added here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <!-- Live Attacks Table -->
@@ -1125,115 +907,87 @@
 
         // Add circle marker for attack source
         function addCircle(country, iso_code, src_ip, ip_rep, color, latLng, protocol) {
-            return new Promise((resolve) => {
-                const circle = L.circle(latLng, {
-                    radius: 50000, // 50km radius
-                    fillColor: color,
-                    color: color,
-                    weight: 2,
-                    opacity: 0.6,
-                    fillOpacity: 0.2
-                }).addTo(circles);
+            const circle = L.circle(latLng, {
+                radius: 50000, // 50km radius
+                fillColor: color,
+                color: color,
+                weight: 2,
+                opacity: 0.6,
+                fillOpacity: 0.2
+            }).addTo(circles);
 
-                circle.bindPopup(`
-                    <div style="padding: 0.5rem;">
-                        <strong style="color: ${color};">📍 Attack Origin</strong><br>
-                        <table class="popup-table" style="margin-top: 0.5rem;">
-                            <tr><td>Country:</td><td>${country} (${iso_code})</td></tr>
-                            <tr><td>Source IP:</td><td>${src_ip}</td></tr>
-                            <tr><td>Reputation:</td><td>${ip_rep}</td></tr>
-                            <tr><td>Protocol:</td><td>${protocol}</td></tr>
-                        </table>
-                    </div>
-                `, {
-                    maxWidth: 300,
-                    className: 'attack-popup'
-                });
-
-                // Remove circle after animation
-                setTimeout(() => {
-                    circles.removeLayer(circle);
-                    resolve();
-                }, 4000);
+            circle.bindPopup(`
+                <div style="padding: 0.5rem;">
+                    <strong style="color: ${color};">📍 Attack Origin</strong><br>
+                    <table class="popup-table" style="margin-top: 0.5rem;">
+                        <tr><td>Country:</td><td>${country} (${iso_code})</td></tr>
+                        <tr><td>Source IP:</td><td>${src_ip}</td></tr>
+                        <tr><td>Reputation:</td><td>${ip_rep}</td></tr>
+                        <tr><td>Protocol:</td><td>${protocol}</td></tr>
+                    </table>
+                </div>
+            `, {
+                maxWidth: 300,
+                className: 'attack-popup'
             });
+
+            // Circles are now persistent and will NOT be removed
         }
 
         // Add destination marker for honeypot
         function addMarker(dst_country, dst_iso_code, dst_ip, hostname, latLng) {
-            return new Promise((resolve) => {
-                const marker = L.circleMarker(latLng, {
-                    radius: 10,
-                    fillColor: '#e20074',
-                    color: '#fff',
-                    weight: 3,
-                    opacity: 1,
-                    fillOpacity: 0.9
-                }).addTo(markers);
+            const marker = L.circleMarker(latLng, {
+                radius: 10,
+                fillColor: '#e20074',
+                color: '#fff',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 0.9
+            }).addTo(markers);
 
-                marker.bindPopup(`
-                    <div style="padding: 0.5rem;">
-                        <strong style="color: #e20074; font-size: 1.1rem;">🛡️ Honeypot Target</strong><br>
-                        <table class="popup-table" style="margin-top: 0.5rem;">
-                            <tr><td>Location:</td><td>${dst_country} (${dst_iso_code})</td></tr>
-                            <tr><td>Hostname:</td><td>${hostname}</td></tr>
-                            <tr><td>Target IP:</td><td>${dst_ip}</td></tr>
-                        </table>
-                    </div>
-                `, {
-                    maxWidth: 300,
-                    className: 'attack-popup'
-                });
-
-                // Pulse effect
-                marker.setStyle({ fillOpacity: 0.9 });
-                setTimeout(() => {
-                    markers.removeLayer(marker);
-                    resolve();
-                }, 4000);
+            marker.bindPopup(`
+                <div style="padding: 0.5rem;">
+                    <strong style="color: #e20074; font-size: 1.1rem;">🛡️ Honeypot Target</strong><br>
+                    <table class="popup-table" style="margin-top: 0.5rem;">
+                        <tr><td>Location:</td><td>${dst_country} (${dst_iso_code})</td></tr>
+                        <tr><td>Hostname:</td><td>${hostname}</td></tr>
+                        <tr><td>Target IP:</td><td>${dst_ip}</td></tr>
+                    </table>
+                </div>
+            `, {
+                maxWidth: 300,
+                className: 'attack-popup'
             });
+
+            // Markers are now persistent and will NOT be removed
         }
 
-        // Handle particle animation (moving dot along the path)
+        // Handle particle animation - expanding circle at source
         function handleParticle(color, srcPoint) {
-            return new Promise((resolve) => {
-                const svg = d3.select(map.getPanes().overlayPane).append("svg")
-                    .attr("class", "particle-svg")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "0")
-                    .style("width", "100%")
-                    .style("height", "100%")
-                    .style("pointer-events", "none");
+            // Skip animation if tab is not visible OR if we are in the "waking up" grace period
+            // This prevents the explosion of buffered animations when returning to the tab
+            if (document.hidden) return;
 
-                // Create a glowing particle
-                const particle = svg.append("circle")
-                    .attr("cx", srcPoint.x)
-                    .attr("cy", srcPoint.y)
-                    .attr("r", 4)
-                    .attr("fill", color)
-                    .attr("opacity", 0)
-                    .style("filter", "drop-shadow(0 0 4px " + color + ")");
+            var x = srcPoint['x'];
+            var y = srcPoint['y'];
 
-                // Fade in and pulse
-                particle.transition()
-                    .duration(300)
-                    .attr("opacity", 1)
-                    .attr("r", 6)
-                    .transition()
-                    .duration(300)
-                    .attr("r", 4)
-                    .on("end", function() {
-                        setTimeout(() => {
-                            d3.select(this).transition()
-                                .duration(300)
-                                .attr("opacity", 0)
-                                .on("end", function() {
-                                    svg.remove();
-                                    resolve();
-                                });
-                        }, 1000);
-                    });
-            });
+            const svg = d3.select(map.getPanes().overlayPane).select("svg.leaflet-zoom-animated");
+            
+            svg.append('circle')
+                .attr('cx', x)
+                .attr('cy', y)
+                .attr('r', 0)
+                .style('fill', 'none')
+                .style('stroke', color)
+                .style('stroke-opacity', 1)
+                .style('stroke-width', 3)
+                .transition()
+                .duration(700)
+                .ease(d3.easeCircleIn)
+                // Circle radius source animation
+                .attr('r', 50)
+                .style('stroke-opacity', 0)
+                .remove();
         }
 
         // Calculate midpoint for curved attack line
@@ -1246,9 +1000,17 @@
             const dy = toY - fromY;
             const length = Math.sqrt(dx * dx + dy * dy);
             
+            // Calculate bend amount based on distance
+            const distance = length;
+            const bendAmount = Math.min(distance * 0.3, 150);
+            
+            // Apply bend direction (true = positive, false = negative)
+            const bendDirection = bend ? 1 : -1;
+            const finalBend = bendAmount * bendDirection;
+            
             // Normalize and apply bend
-            const offsetX = -(dy / length) * bend;
-            const offsetY = (dx / length) * bend;
+            const offsetX = -(dy / length) * finalBend;
+            const offsetY = (dx / length) * finalBend;
             
             return {
                 x: midX + offsetX,
@@ -1269,87 +1031,61 @@
 
         // Handle traffic animation (animated curved line from source → destination)
         function handleTraffic(color, srcPoint, hqPoint) {
-            // Skip animation if tab is not visible
-            if (document.hidden) return Promise.resolve();
+            // Skip animation if tab is not visible OR if we are in the "waking up" grace period
+            // This prevents the explosion of buffered animations when returning to the tab
+            if (document.hidden) return;
 
-            return new Promise((resolve) => {
-                const svg = d3.select(map.getPanes().overlayPane).append("svg")
-                    .attr("class", "traffic-svg")
-                    .style("position", "absolute")
-                    .style("top", "0")
-                    .style("left", "0")
-                    .style("width", "100%")
-                    .style("height", "100%")
-                    .style("pointer-events", "none")
-                    .style("z-index", "400");
+            var fromX = srcPoint['x'];
+            var fromY = srcPoint['y'];
+            var toX = hqPoint['x'];
+            var toY = hqPoint['y'];
+            var bendArray = [true, false];
+            var bend = bendArray[Math.floor(Math.random() * bendArray.length)];
 
-                const fromX = srcPoint.x;
-                const fromY = srcPoint.y;
-                const toX = hqPoint.x;
-                const toY = hqPoint.y;
-                
-                // Random bend direction
-                const bendArray = [1, -1];
-                const bendDirection = bendArray[Math.floor(Math.random() * bendArray.length)];
-                
-                // Calculate bend based on distance
-                const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
-                const bend = Math.min(distance * 0.3, 150) * bendDirection;
+            var lineData = [srcPoint, calcMidpoint(fromX, fromY, toX, toY, bend), hqPoint]
+            var lineFunction = d3.line()
+                .curve(d3.curveBasis)
+                .x(function(d) {return d.x;})
+                .y(function(d) {return d.y;});
 
-                // Create line data with curved midpoint
-                const lineData = [
-                    srcPoint, 
-                    calcMidpoint(fromX, fromY, toX, toY, bend), 
-                    hqPoint
-                ];
+            const svg = d3.select(map.getPanes().overlayPane).select("svg.leaflet-zoom-animated");
 
-                // Create D3 line function with curveBasis
-                const lineFunction = d3.line()
-                    .curve(d3.curveBasis)
-                    .x(function(d) { return d.x; })
-                    .y(function(d) { return d.y; });
-
-                // Draw the attack line
-                const lineGraph = svg.append('path')
+            var lineGraph = svg.append('path')
                     .attr('d', lineFunction(lineData))
                     .attr('opacity', 0.8)
                     .attr('stroke', color)
                     .attr('stroke-width', 2)
                     .attr('fill', 'none');
 
-                const circleRadius = 6;
+            var circleRadius = 6
 
-                // Circle follows the line
-                const dot = svg.append('circle')
-                    .attr('r', circleRadius)
-                    .attr('fill', color)
-                    .transition()
-                    .duration(700)
-                    .ease(d3.easeCircleIn)
-                    .attrTween('transform', translateAlong(lineGraph.node()))
-                    .on('end', function() {
-                        d3.select(this)
-                            .attr('fill', 'none')
-                            .attr('stroke', color)
-                            .attr('stroke-width', 3)
-                            .transition()
-                            .duration(700)
-                            .ease(d3.easeCircleIn)
-                            // Circle radius destination animation (expands at destination)
-                            .attr('r', 50)
-                            .style('stroke-opacity', 0)
-                            .on('end', function() {
-                                // Fade out and remove line after animation
-                                lineGraph.transition()
-                                    .duration(300)
-                                    .attr('opacity', 0)
-                                    .on('end', function() {
-                                        svg.remove();
-                                        resolve();
-                                    });
-                            });
-                    });
-            });
+            // Circle follows the line
+            var dot = svg.append('circle')
+                .attr('r', circleRadius)
+                .attr('fill', color)
+                .transition()
+                .duration(700)
+                .ease(d3.easeCircleIn)
+                .attrTween('transform', translateAlong(lineGraph.node()))
+                .on('end', function() {
+                    d3.select(this)
+                        .attr('fill', 'none')
+                        .attr('stroke', color)
+                        .attr('stroke-width', 3)
+                        .transition()
+                        .duration(700)
+                        .ease(d3.easeCircleIn)
+                        // Circle radius destination animation
+                        .attr('r', 50)
+                        .style('stroke-opacity', 0)
+                        .on('end', function() {
+                            // Fade out line
+                            lineGraph.transition()
+                                .duration(300)
+                                .attr('opacity', 0)
+                                .remove();
+                        });
+                });
         }
 
         // Create comprehensive attack visualization with all animations
@@ -1359,16 +1095,11 @@
             const srcPoint = map.latLngToLayerPoint(srcLatLng);
             const dstPoint = map.latLngToLayerPoint(dstLatLng);
 
-            // Execute all animations in parallel
-            // handleTraffic now draws the main attack line with proper D3 curveBasis
-            Promise.all([
-                addCircle(webhookData.country, webhookData.iso_code, webhookData.src_ip, webhookData.ip_rep, color, srcLatLng, webhookData.protocol),
-                addMarker(webhookData.dst_country_name, webhookData.dst_iso_code, webhookData.dst_ip, webhookData.tpot_hostname, dstLatLng),
-                handleParticle(color, srcPoint),
-                handleTraffic(color, srcPoint, dstPoint)
-            ]).then(() => {
-                console.log('✅ Attack animation complete');
-            });
+            // Call animations directly (no Promise.all)
+            addCircle(webhookData.country, webhookData.iso_code, webhookData.src_ip, webhookData.ip_rep, color, srcLatLng, webhookData.protocol);
+            addMarker(webhookData.dst_country_name, webhookData.dst_iso_code, webhookData.dst_ip, webhookData.tpot_hostname, dstLatLng);
+            handleParticle(color, srcPoint);
+            handleTraffic(color, srcPoint, dstPoint);
 
             // Add persistent source marker with detailed popup
             const sourceMarker = L.circleMarker([srcLat, srcLng], {
