@@ -1256,8 +1256,22 @@
             };
         }
 
+        // Helper function for animating circle along path
+        function translateAlong(path) {
+            const length = path.getTotalLength();
+            return function(d, i, a) {
+                return function(t) {
+                    const point = path.getPointAtLength(t * length);
+                    return `translate(${point.x}, ${point.y})`;
+                };
+            };
+        }
+
         // Handle traffic animation (animated curved line from source → destination)
-        function handleTraffic(color, srcPoint, dstPoint, srcLatLng) {
+        function handleTraffic(color, srcPoint, hqPoint) {
+            // Skip animation if tab is not visible
+            if (document.hidden) return Promise.resolve();
+
             return new Promise((resolve) => {
                 const svg = d3.select(map.getPanes().overlayPane).append("svg")
                     .attr("class", "traffic-svg")
@@ -1271,18 +1285,23 @@
 
                 const fromX = srcPoint.x;
                 const fromY = srcPoint.y;
-                const toX = dstPoint.x;
-                const toY = dstPoint.y;
+                const toX = hqPoint.x;
+                const toY = hqPoint.y;
+                
+                // Random bend direction
+                const bendArray = [true, false];
+                const bendDirection = bendArray[Math.floor(Math.random() * bendArray.length)];
                 
                 // Calculate bend based on distance
                 const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
-                const bend = Math.min(distance * 0.3, 150); // Dynamic bend, max 150px
+                let bend = Math.min(distance * 0.3, 150);
+                if (!bendDirection) bend = -bend; // Negative bend for opposite direction
 
                 // Create line data with curved midpoint
                 const lineData = [
                     srcPoint, 
                     calcMidpoint(fromX, fromY, toX, toY, bend), 
-                    dstPoint
+                    hqPoint
                 ];
 
                 // Create D3 line function with curveBasis
@@ -1297,62 +1316,40 @@
                     .attr('opacity', 0.8)
                     .attr('stroke', color)
                     .attr('stroke-width', 2)
-                    .attr('fill', 'none')
-                    .style('filter', `drop-shadow(0 0 3px ${color})`)
-                    .attr('stroke-dasharray', function() {
-                        return this.getTotalLength();
-                    })
-                    .attr('stroke-dashoffset', function() {
-                        return this.getTotalLength();
-                    });
+                    .attr('fill', 'none');
 
-                // Animate the line drawing
-                lineGraph.transition()
-                    .duration(1500)
-                    .ease(d3.easeLinear)
-                    .attr('stroke-dashoffset', 0)
+                const circleRadius = 6;
+
+                // Circle follows the line
+                const dot = svg.append('circle')
+                    .attr('r', circleRadius)
+                    .attr('fill', color)
+                    .transition()
+                    .duration(700)
+                    .ease(d3.easeCircleIn)
+                    .attrTween('transform', translateAlong(lineGraph.node()))
                     .on('end', function() {
-                        // Fade out after animation
-                        d3.select(this).transition()
-                            .delay(500)
-                            .duration(500)
-                            .attr('opacity', 0)
+                        d3.select(this)
+                            .attr('fill', 'none')
+                            .attr('stroke', color)
+                            .attr('stroke-width', 3)
+                            .transition()
+                            .duration(700)
+                            .ease(d3.easeCircleIn)
+                            // Circle radius destination animation (expands at destination)
+                            .attr('r', 50)
+                            .style('stroke-opacity', 0)
                             .on('end', function() {
-                                svg.remove();
-                                resolve();
+                                // Fade out and remove line after animation
+                                lineGraph.transition()
+                                    .duration(300)
+                                    .attr('opacity', 0)
+                                    .on('end', function() {
+                                        svg.remove();
+                                        resolve();
+                                    });
                             });
                     });
-
-                // Create animated particles traveling along the path
-                const numParticles = 5;
-                for (let i = 0; i < numParticles; i++) {
-                    const particle = svg.append("circle")
-                        .attr("r", 3)
-                        .attr("fill", color)
-                        .attr("opacity", 0)
-                        .style("filter", `drop-shadow(0 0 3px ${color})`);
-                    
-                    // Animate each particle with delay
-                    const delay = i * 200;
-                    setTimeout(() => {
-                        const pathLength = lineGraph.node().getTotalLength();
-                        
-                        particle
-                            .attr("opacity", 0.8)
-                            .transition()
-                            .duration(2000)
-                            .ease(d3.easeLinear)
-                            .attrTween("transform", function() {
-                                return function(t) {
-                                    const point = lineGraph.node().getPointAtLength(t * pathLength);
-                                    return `translate(${point.x}, ${point.y})`;
-                                };
-                            })
-                            .transition()
-                            .duration(300)
-                            .attr("opacity", 0);
-                    }, delay);
-                }
             });
         }
 
@@ -1369,7 +1366,7 @@
                 addCircle(webhookData.country, webhookData.iso_code, webhookData.src_ip, webhookData.ip_rep, color, srcLatLng, webhookData.protocol),
                 addMarker(webhookData.dst_country_name, webhookData.dst_iso_code, webhookData.dst_ip, webhookData.tpot_hostname, dstLatLng),
                 handleParticle(color, srcPoint),
-                handleTraffic(color, srcPoint, dstPoint, srcLatLng)
+                handleTraffic(color, srcPoint, dstPoint)
             ]).then(() => {
                 console.log('✅ Attack animation complete');
             });
