@@ -1236,7 +1236,27 @@
             });
         }
 
-        // Handle traffic animation (animated particles moving along path)
+        // Calculate midpoint for curved attack line
+        function calcMidpoint(fromX, fromY, toX, toY, bend) {
+            const midX = (fromX + toX) / 2;
+            const midY = (fromY + toY) / 2;
+            
+            // Calculate perpendicular offset for the curve
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            
+            // Normalize and apply bend
+            const offsetX = -(dy / length) * bend;
+            const offsetY = (dx / length) * bend;
+            
+            return {
+                x: midX + offsetX,
+                y: midY + offsetY
+            };
+        }
+
+        // Handle traffic animation (animated curved line from source → destination)
         function handleTraffic(color, srcPoint, dstPoint, srcLatLng) {
             return new Promise((resolve) => {
                 const svg = d3.select(map.getPanes().overlayPane).append("svg")
@@ -1246,38 +1266,76 @@
                     .style("left", "0")
                     .style("width", "100%")
                     .style("height", "100%")
-                    .style("pointer-events", "none");
+                    .style("pointer-events", "none")
+                    .style("z-index", "400");
 
-                // Calculate control point for bezier curve
-                const midX = (srcPoint.x + dstPoint.x) / 2;
-                const midY = Math.min(srcPoint.y, dstPoint.y) - 100;
-
-                // Create path for particles to follow
-                const pathData = `M ${srcPoint.x},${srcPoint.y} Q ${midX},${midY} ${dstPoint.x},${dstPoint.y}`;
-
-                // Create invisible path for particle movement
-                const pathElement = svg.append("path")
-                    .attr("d", pathData)
-                    .attr("fill", "none")
-                    .attr("stroke", "none");
-
-                // Create multiple particles
-                const numParticles = 5;
-                const particles = [];
+                const fromX = srcPoint.x;
+                const fromY = srcPoint.y;
+                const toX = dstPoint.x;
+                const toY = dstPoint.y;
                 
+                // Calculate bend based on distance
+                const distance = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                const bend = Math.min(distance * 0.3, 150); // Dynamic bend, max 150px
+
+                // Create line data with curved midpoint
+                const lineData = [
+                    srcPoint, 
+                    calcMidpoint(fromX, fromY, toX, toY, bend), 
+                    dstPoint
+                ];
+
+                // Create D3 line function with curveBasis
+                const lineFunction = d3.line()
+                    .curve(d3.curveBasis)
+                    .x(function(d) { return d.x; })
+                    .y(function(d) { return d.y; });
+
+                // Draw the attack line
+                const lineGraph = svg.append('path')
+                    .attr('d', lineFunction(lineData))
+                    .attr('opacity', 0.8)
+                    .attr('stroke', color)
+                    .attr('stroke-width', 2)
+                    .attr('fill', 'none')
+                    .style('filter', `drop-shadow(0 0 3px ${color})`)
+                    .attr('stroke-dasharray', function() {
+                        return this.getTotalLength();
+                    })
+                    .attr('stroke-dashoffset', function() {
+                        return this.getTotalLength();
+                    });
+
+                // Animate the line drawing
+                lineGraph.transition()
+                    .duration(1500)
+                    .ease(d3.easeLinear)
+                    .attr('stroke-dashoffset', 0)
+                    .on('end', function() {
+                        // Fade out after animation
+                        d3.select(this).transition()
+                            .delay(500)
+                            .duration(500)
+                            .attr('opacity', 0)
+                            .on('end', function() {
+                                svg.remove();
+                                resolve();
+                            });
+                    });
+
+                // Create animated particles traveling along the path
+                const numParticles = 5;
                 for (let i = 0; i < numParticles; i++) {
                     const particle = svg.append("circle")
                         .attr("r", 3)
                         .attr("fill", color)
                         .attr("opacity", 0)
-                        .style("filter", "drop-shadow(0 0 3px " + color + ")");
+                        .style("filter", `drop-shadow(0 0 3px ${color})`);
                     
-                    particles.push(particle);
-
                     // Animate each particle with delay
                     const delay = i * 200;
                     setTimeout(() => {
-                        const pathLength = pathElement.node().getTotalLength();
+                        const pathLength = lineGraph.node().getTotalLength();
                         
                         particle
                             .attr("opacity", 0.8)
@@ -1286,7 +1344,7 @@
                             .ease(d3.easeLinear)
                             .attrTween("transform", function() {
                                 return function(t) {
-                                    const point = pathElement.node().getPointAtLength(t * pathLength);
+                                    const point = lineGraph.node().getPointAtLength(t * pathLength);
                                     return `translate(${point.x}, ${point.y})`;
                                 };
                             })
@@ -1295,12 +1353,6 @@
                             .attr("opacity", 0);
                     }, delay);
                 }
-
-                // Clean up after all animations
-                setTimeout(() => {
-                    svg.remove();
-                    resolve();
-                }, 2500 + (numParticles * 200));
             });
         }
 
@@ -1312,6 +1364,7 @@
             const dstPoint = map.latLngToLayerPoint(dstLatLng);
 
             // Execute all animations in parallel
+            // handleTraffic now draws the main attack line with proper D3 curveBasis
             Promise.all([
                 addCircle(webhookData.country, webhookData.iso_code, webhookData.src_ip, webhookData.ip_rep, color, srcLatLng, webhookData.protocol),
                 addMarker(webhookData.dst_country_name, webhookData.dst_iso_code, webhookData.dst_ip, webhookData.tpot_hostname, dstLatLng),
@@ -1320,49 +1373,6 @@
             ]).then(() => {
                 console.log('✅ Attack animation complete');
             });
-
-            // Draw the main attack line on attackLines layer
-            const svg = d3.select(map.getPanes().overlayPane).append("svg")
-                .attr("class", "attack-line-svg")
-                .style("position", "absolute")
-                .style("top", "0")
-                .style("left", "0")
-                .style("width", "100%")
-                .style("height", "100%")
-                .style("pointer-events", "none")
-                .style("z-index", "400");
-
-            // Create curved path
-            const midX = (srcPoint.x + dstPoint.x) / 2;
-            const midY = Math.min(srcPoint.y, dstPoint.y) - 100;
-            
-            const path = svg.append("path")
-                .attr("d", `M ${srcPoint.x},${srcPoint.y} Q ${midX},${midY} ${dstPoint.x},${dstPoint.y}`)
-                .attr("stroke", color)
-                .attr("stroke-width", 3)
-                .attr("fill", "none")
-                .attr("opacity", 0)
-                .attr("stroke-dasharray", "1000")
-                .attr("stroke-dashoffset", "1000")
-                .style("filter", `drop-shadow(0 0 3px ${color})`);
-
-            // Animate the line
-            path.transition()
-                .duration(200)
-                .attr("opacity", 0.8)
-                .transition()
-                .duration(1500)
-                .attr("stroke-dashoffset", 0)
-                .on("end", function() {
-                    // Fade out after animation
-                    d3.select(this).transition()
-                        .delay(500)
-                        .duration(500)
-                        .attr("opacity", 0)
-                        .on("end", function() {
-                            svg.remove();
-                        });
-                });
 
             // Add persistent source marker with detailed popup
             const sourceMarker = L.circleMarker([srcLat, srcLng], {
