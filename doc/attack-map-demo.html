@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-Pot Attack Map - Demo with Mock Data</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" crossorigin="anonymous" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        .top-navbar {
+            background: linear-gradient(135deg, #1a1f3a 0%, #0f1228 100%);
+            border-bottom: 2px solid #00ff88;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2);
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00ff88;
+        }
+
+        .navbar-brand i {
+            font-size: 1.8rem;
+        }
+
+        .stats-section {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #00ff88;
+            margin-top: 0.25rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 20px;
+            border: 1px solid #00ff88;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #00ff88;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        #map-container {
+            position: relative;
+            height: calc(100vh - 80px);
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+            background: #0a0e27;
+        }
+
+        .sidebar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 120px);
+            background: rgba(26, 31, 58, 0.95);
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+            z-index: 1000;
+        }
+
+        .sidebar h3 {
+            color: #00ff88;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .attack-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .attack-item {
+            background: rgba(0, 255, 136, 0.05);
+            border-left: 3px solid;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .attack-item.ssh { border-left-color: #ff6b6b; }
+        .attack-item.http { border-left-color: #4dabf7; }
+        .attack-item.ftp { border-left-color: #ffd93d; }
+        .attack-item.telnet { border-left-color: #a78bfa; }
+        .attack-item.rdp { border-left-color: #ff8fab; }
+
+        .attack-item strong {
+            color: #00ff88;
+        }
+
+        .attack-item .time {
+            color: #888;
+            font-size: 0.75rem;
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        .protocol-badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .badge-ssh { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; }
+        .badge-http { background: rgba(77, 171, 247, 0.2); color: #4dabf7; }
+        .badge-ftp { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
+        .badge-telnet { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .badge-rdp { background: rgba(255, 143, 171, 0.2); color: #ff8fab; }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(26, 31, 58, 0.98);
+            color: #e0e0e0;
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(26, 31, 58, 0.98);
+        }
+
+        /* Custom scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 3px;
+        }
+
+        .demo-notice {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid #ffc107;
+            color: #ffc107;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .attack-line {
+            stroke: #ff6b6b;
+            stroke-width: 2;
+            fill: none;
+            opacity: 0.7;
+            animation: drawLine 1s ease-out forwards;
+        }
+
+        @keyframes drawLine {
+            from {
+                stroke-dashoffset: 1000;
+                opacity: 0;
+            }
+            to {
+                stroke-dashoffset: 0;
+                opacity: 0.7;
+            }
+        }
+
+        .top-attackers {
+            margin-top: 1.5rem;
+        }
+
+        .top-attacker-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: rgba(0, 255, 136, 0.05);
+            border-radius: 4px;
+        }
+
+        .top-attacker-item .country {
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .top-attacker-item .count {
+            color: #ff6b6b;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="top-navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-shield-halved"></i>
+            <span>T-Pot Attack Map - DEMO</span>
+        </div>
+        
+        <div class="stats-section">
+            <div class="stat-item">
+                <div class="stat-label">1 Minute</div>
+                <div class="stat-value" id="stat-1m">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">1 Hour</div>
+                <div class="stat-value" id="stat-1h">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">24 Hours</div>
+                <div class="stat-value" id="stat-24h">0</div>
+            </div>
+        </div>
+        
+        <div class="connection-status">
+            <div class="status-indicator"></div>
+            <span>Mock Data Active</span>
+        </div>
+    </nav>
+
+    <!-- Map Container -->
+    <div id="map-container">
+        <div id="map"></div>
+        
+        <!-- Sidebar with Recent Attacks -->
+        <div class="sidebar">
+            <div class="demo-notice">
+                <i class="fas fa-info-circle"></i> Demo Mode - Simulated Attack Data
+            </div>
+            
+            <h3>
+                <i class="fas fa-bolt"></i>
+                Recent Attacks
+            </h3>
+            <ul class="attack-list" id="attack-list">
+                <!-- Attack items will be added here dynamically -->
+            </ul>
+
+            <div class="top-attackers">
+                <h3>
+                    <i class="fas fa-ranking-star"></i>
+                    Top Attackers
+                </h3>
+                <div id="top-attackers-list">
+                    <!-- Top attackers will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet.js -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js" crossorigin="anonymous"></script>
+    
+    <!-- D3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js" crossorigin="anonymous"></script>
+    
+    <!-- jQuery -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js" crossorigin="anonymous"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        // Initialize Leaflet Map
+        const map = L.map('map', {
+            center: [20, 0],
+            zoom: 2.5,
+            minZoom: 2,
+            maxZoom: 8,
+            worldCopyJump: true
+        });
+
+        // Add CARTO Dark Theme Tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Layer groups for markers and lines
+        const attackLines = L.layerGroup().addTo(map);
+        const markers = L.layerGroup().addTo(map);
+
+        // Mock data sources - Common attacker locations
+        const attackSources = [
+            { country: 'China', lat: 35.8617, lng: 104.1954, city: 'Beijing' },
+            { country: 'Russia', lat: 55.7558, lng: 37.6173, city: 'Moscow' },
+            { country: 'USA', lat: 37.7749, lng: -122.4194, city: 'San Francisco' },
+            { country: 'Brazil', lat: -23.5505, lng: -46.6333, city: 'São Paulo' },
+            { country: 'India', lat: 28.6139, lng: 77.2090, city: 'New Delhi' },
+            { country: 'Germany', lat: 52.5200, lng: 13.4050, city: 'Berlin' },
+            { country: 'UK', lat: 51.5074, lng: -0.1278, city: 'London' },
+            { country: 'Japan', lat: 35.6762, lng: 139.6503, city: 'Tokyo' },
+            { country: 'South Korea', lat: 37.5665, lng: 126.9780, city: 'Seoul' },
+            { country: 'Netherlands', lat: 52.3676, lng: 4.9041, city: 'Amsterdam' },
+            { country: 'Ukraine', lat: 50.4501, lng: 30.5234, city: 'Kyiv' },
+            { country: 'Vietnam', lat: 21.0285, lng: 105.8542, city: 'Hanoi' },
+            { country: 'Iran', lat: 35.6892, lng: 51.3890, city: 'Tehran' },
+            { country: 'Turkey', lat: 41.0082, lng: 28.9784, city: 'Istanbul' },
+            { country: 'France', lat: 48.8566, lng: 2.3522, city: 'Paris' }
+        ];
+
+        // Your honeypot location (example: Frankfurt, Germany)
+        const honeypotLocation = { lat: 50.1109, lng: 8.6821, city: 'Frankfurt' };
+
+        // Protocol definitions
+        const protocols = [
+            { name: 'SSH', port: 22, color: '#ff6b6b', class: 'ssh' },
+            { name: 'HTTP', port: 80, color: '#4dabf7', class: 'http' },
+            { name: 'FTP', port: 21, color: '#ffd93d', class: 'ftp' },
+            { name: 'Telnet', port: 23, color: '#a78bfa', class: 'telnet' },
+            { name: 'RDP', port: 3389, color: '#ff8fab', class: 'rdp' }
+        ];
+
+        // Statistics
+        let stats = {
+            '1m': 0,
+            '1h': 0,
+            '24h': 0
+        };
+
+        let attackHistory = [];
+        let countryStats = {};
+
+        // Add honeypot marker
+        const honeypotMarker = L.circleMarker([honeypotLocation.lat, honeypotLocation.lng], {
+            radius: 8,
+            fillColor: '#00ff88',
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(markers);
+
+        honeypotMarker.bindPopup(`
+            <div style="text-align: center; padding: 0.5rem;">
+                <strong style="color: #00ff88; font-size: 1.1rem;">🛡️ Your Honeypot</strong><br>
+                <span style="color: #888; font-size: 0.85rem;">${honeypotLocation.city}</span>
+            </div>
+        `);
+
+        // Generate random IP address
+        function generateIP() {
+            return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+        }
+
+        // Format time
+        function formatTime(date) {
+            return date.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        // Create attack animation
+        function createAttackLine(source, destination, protocol) {
+            // Create curved line using D3
+            const svg = d3.select(map.getPanes().overlayPane).append("svg")
+                .attr("class", "attack-line-svg")
+                .style("position", "absolute")
+                .style("top", "0")
+                .style("left", "0")
+                .style("width", "100%")
+                .style("height", "100%")
+                .style("pointer-events", "none");
+
+            const sourcePoint = map.latLngToLayerPoint([source.lat, source.lng]);
+            const destPoint = map.latLngToLayerPoint([destination.lat, destination.lng]);
+
+            // Create curved path
+            const path = svg.append("path")
+                .attr("d", `M ${sourcePoint.x},${sourcePoint.y} Q ${(sourcePoint.x + destPoint.x) / 2},${Math.min(sourcePoint.y, destPoint.y) - 100} ${destPoint.x},${destPoint.y}`)
+                .attr("stroke", protocol.color)
+                .attr("stroke-width", 2)
+                .attr("fill", "none")
+                .attr("opacity", 0.8)
+                .attr("stroke-dasharray", "1000")
+                .attr("stroke-dashoffset", "1000");
+
+            // Animate the line
+            path.transition()
+                .duration(1000)
+                .attr("stroke-dashoffset", 0)
+                .on("end", function() {
+                    // Fade out after animation
+                    d3.select(this).transition()
+                        .delay(1000)
+                        .duration(500)
+                        .attr("opacity", 0)
+                        .remove();
+                });
+
+            // Remove SVG after animation
+            setTimeout(() => {
+                svg.remove();
+            }, 2500);
+
+            // Add source marker
+            const sourceMarker = L.circleMarker([source.lat, source.lng], {
+                radius: 5,
+                fillColor: protocol.color,
+                color: '#fff',
+                weight: 1,
+                opacity: 0.8,
+                fillOpacity: 0.6
+            }).addTo(markers);
+
+            sourceMarker.bindPopup(`
+                <div style="padding: 0.5rem;">
+                    <strong style="color: ${protocol.color};">⚠️ Attack Source</strong><br>
+                    <span style="color: #888; font-size: 0.85rem;">
+                        ${source.city}, ${source.country}<br>
+                        Protocol: ${protocol.name}<br>
+                        Port: ${protocol.port}
+                    </span>
+                </div>
+            `);
+
+            // Remove marker after a while
+            setTimeout(() => {
+                markers.removeLayer(sourceMarker);
+            }, 5000);
+        }
+
+        // Simulate attack event
+        function simulateAttack() {
+            const source = attackSources[Math.floor(Math.random() * attackSources.length)];
+            const protocol = protocols[Math.floor(Math.random() * protocols.length)];
+            const sourceIP = generateIP();
+            const timestamp = new Date();
+
+            // Create attack object
+            const attack = {
+                source,
+                protocol,
+                sourceIP,
+                timestamp,
+                honeypotPort: protocol.port + Math.floor(Math.random() * 10)
+            };
+
+            // Update statistics
+            stats['1m']++;
+            stats['1h']++;
+            stats['24h']++;
+            
+            // Update country statistics
+            if (!countryStats[source.country]) {
+                countryStats[source.country] = 0;
+            }
+            countryStats[source.country]++;
+
+            // Update UI
+            updateStats();
+            addAttackToList(attack);
+            updateTopAttackers();
+
+            // Create visual attack
+            createAttackLine(source, honeypotLocation, protocol);
+
+            // Store in history
+            attackHistory.push(attack);
+            if (attackHistory.length > 100) {
+                attackHistory.shift();
+            }
+        }
+
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('stat-1m').textContent = stats['1m'];
+            document.getElementById('stat-1h').textContent = stats['1h'];
+            document.getElementById('stat-24h').textContent = stats['24h'];
+        }
+
+        // Add attack to sidebar list
+        function addAttackToList(attack) {
+            const list = document.getElementById('attack-list');
+            const item = document.createElement('li');
+            item.className = `attack-item ${attack.protocol.class}`;
+            item.innerHTML = `
+                <span class="protocol-badge badge-${attack.protocol.class}">${attack.protocol.name}</span><br>
+                <strong>${attack.source.country}</strong> → ${honeypotLocation.city}<br>
+                <small>IP: ${attack.sourceIP} | Port: ${attack.honeypotPort}</small>
+                <span class="time">${formatTime(attack.timestamp)}</span>
+            `;
+            
+            list.insertBefore(item, list.firstChild);
+            
+            // Keep only last 20 attacks
+            while (list.children.length > 20) {
+                list.removeChild(list.lastChild);
+            }
+        }
+
+        // Update top attackers list
+        function updateTopAttackers() {
+            const sorted = Object.entries(countryStats)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const container = document.getElementById('top-attackers-list');
+            container.innerHTML = sorted.map(([country, count]) => `
+                <div class="top-attacker-item">
+                    <span class="country">${country}</span>
+                    <span class="count">${count}</span>
+                </div>
+            `).join('');
+        }
+
+        // Reset 1-minute counter
+        setInterval(() => {
+            stats['1m'] = 0;
+            updateStats();
+        }, 60000);
+
+        // Reset 1-hour counter
+        setInterval(() => {
+            stats['1h'] = 0;
+            updateStats();
+        }, 3600000);
+
+        // Simulate attacks at random intervals
+        function startAttackSimulation() {
+            simulateAttack();
+            
+            // Random interval between 1-5 seconds
+            const nextInterval = 1000 + Math.random() * 4000;
+            setTimeout(startAttackSimulation, nextInterval);
+        }
+
+        // Start the simulation after page load
+        setTimeout(() => {
+            console.log('🎯 T-Pot Attack Map Demo Started');
+            console.log('📊 Simulating honeypot attacks with mock data');
+            console.log('🗺️  Using Leaflet.js for mapping');
+            console.log('📈 Using D3.js for attack line animations');
+            console.log('');
+            console.log('This demo simulates WebSocket data that would normally come from:');
+            console.log('  Honeypots → Elasticsearch → DataServer → Redis → AttackMapServer → Browser');
+            startAttackSimulation();
+        }, 1000);
+
+        // Handle map resize
+        window.addEventListener('resize', () => {
+            map.invalidateSize();
+        });
+    </script>
+</body>
+</html>
