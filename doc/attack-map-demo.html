@@ -15,6 +15,34 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous" />
     
     <style>
+        /* CSS Variables matching T-Pot Attack Map */
+        :root {
+            --primary-color: #e20074;
+            --primary-hover: #c8006a;
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --bg-navbar: rgba(26, 26, 26, 0.95);
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --border-primary: #333333;
+            --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Monaco', 'Menlo', monospace;
+            --font-xs: 0.875rem;
+            --font-sm: 1rem;
+            --font-md: 1.125rem;
+            --font-lg: 1.25rem;
+            --font-xl: 1.5rem;
+            --font-xxl: 1.875rem;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --radius-md: 8px;
+            --radius-round: 50%;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -22,74 +50,209 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #0a0e27;
-            color: #e0e0e0;
+            height: 100vh;
+            width: 100vw;
+            font-family: var(--font-primary);
+            font-size: var(--font-sm);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow: hidden;
         }
 
-        .top-navbar {
-            background: linear-gradient(135deg, #1a1f3a 0%, #0f1228 100%);
-            border-bottom: 2px solid #00ff88;
-            padding: 1rem 2rem;
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2);
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-content {
+            text-align: center;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid var(--border-primary);
+            border-top: 3px solid var(--primary-color);
+            border-radius: var(--radius-round);
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--spacing-lg);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-content h2 {
+            font-size: var(--font-xxl);
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-primary);
+        }
+
+        .loading-content p {
+            color: var(--text-secondary);
+        }
+
+        /* Top Navigation Bar */
+        .top-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--bg-navbar);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-primary);
+            z-index: 1000;
+        }
+
+        .navbar-content {
+            height: 100%;
+            padding: 0 var(--spacing-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+        }
+
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .navbar-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #00ff88;
+            gap: var(--spacing-xs);
+            font-size: var(--font-lg);
+            font-weight: 600;
+            color: var(--text-primary);
         }
 
         .navbar-brand i {
-            font-size: 1.8rem;
+            color: var(--primary-color);
+            font-size: var(--font-xl);
         }
 
-        .stats-section {
+        /* T-Pot Stats in Header */
+        .navbar-stats {
             display: flex;
-            gap: 2rem;
             align-items: center;
+            flex: 1;
+            justify-content: center;
         }
 
-        .stat-item {
-            text-align: center;
+        .stats-group {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: rgba(226, 0, 116, 0.1);
+            border: 1px solid rgba(226, 0, 116, 0.3);
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(5px);
         }
 
-        .stat-label {
-            font-size: 0.75rem;
-            color: #888;
+        .stats-header-title {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            font-size: var(--font-sm);
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .stats-inline {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .stat-inline-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .stat-inline-label {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
+        .stat-inline-value {
+            font-size: var(--font-lg);
             font-weight: 700;
-            color: #00ff88;
-            margin-top: 0.25rem;
+            color: var(--primary-color);
+            font-family: var(--font-mono);
+            min-width: 2rem;
+            text-align: center;
+            transition: all 0.15s ease;
+        }
+
+        .stat-separator {
+            color: var(--border-primary);
+            font-size: var(--font-sm);
+            opacity: 0.6;
+            font-weight: 300;
+        }
+
+        /* Navbar Controls */
+        .navbar-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
         }
 
         .connection-status {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(0, 255, 136, 0.1);
-            border-radius: 20px;
-            border: 1px solid #00ff88;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            font-size: var(--font-sm);
         }
 
         .status-indicator {
             width: 10px;
             height: 10px;
-            border-radius: 50%;
-            background: #00ff88;
+            border-radius: var(--radius-round);
+            background: var(--primary-color);
             animation: pulse 2s infinite;
         }
 
@@ -98,54 +261,108 @@
             50% { opacity: 0.3; }
         }
 
+        /* Map Container */
+        .main-container {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
         #map-container {
             position: relative;
-            height: calc(100vh - 80px);
+            height: 100%;
+            width: 100%;
         }
 
         #map {
             height: 100%;
             width: 100%;
-            background: #0a0e27;
+            background: var(--bg-primary);
         }
 
-        .sidebar {
+        /* Sidebar Panel */
+        .side-panel {
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 320px;
+            width: 350px;
             max-height: calc(100vh - 120px);
-            background: rgba(26, 31, 58, 0.95);
-            border: 2px solid #00ff88;
-            border-radius: 12px;
-            padding: 1.5rem;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            z-index: 900;
             overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
-            z-index: 1000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
 
-        .sidebar h3 {
-            color: #00ff88;
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
+        .panel-content {
+            padding: var(--spacing-lg);
+        }
+
+        .panel-section {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .section-header {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-primary);
         }
 
+        .section-header i {
+            color: var(--primary-color);
+            font-size: var(--font-md);
+        }
+
+        .section-header h3 {
+            font-size: var(--font-md);
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .demo-notice {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            color: #ffc107;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-lg);
+            font-size: var(--font-xs);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+        }
+
+        /* Attack List */
         .attack-list {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
 
         .attack-item {
-            background: rgba(0, 255, 136, 0.05);
+            background: rgba(226, 0, 116, 0.05);
             border-left: 3px solid;
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            font-size: var(--font-xs);
             animation: slideIn 0.3s ease-out;
+            transition: all 0.15s ease;
+        }
+
+        .attack-item:hover {
+            background: rgba(226, 0, 116, 0.1);
+            transform: translateX(-2px);
         }
 
         @keyframes slideIn {
@@ -159,22 +376,15 @@
             }
         }
 
+        /* Protocol color coding */
         .attack-item.ssh { border-left-color: #ff6b6b; }
         .attack-item.http { border-left-color: #4dabf7; }
         .attack-item.ftp { border-left-color: #ffd93d; }
         .attack-item.telnet { border-left-color: #a78bfa; }
         .attack-item.rdp { border-left-color: #ff8fab; }
-
-        .attack-item strong {
-            color: #00ff88;
-        }
-
-        .attack-item .time {
-            color: #888;
-            font-size: 0.75rem;
-            display: block;
-            margin-top: 0.25rem;
-        }
+        .attack-item.vnc { border-left-color: #0000FF; }
+        .attack-item.smb { border-left-color: #9c27b0; }
+        .attack-item.sip { border-left-color: #00bcd4; }
 
         .protocol-badge {
             display: inline-block;
@@ -191,141 +401,182 @@
         .badge-ftp { background: rgba(255, 217, 61, 0.2); color: #ffd93d; }
         .badge-telnet { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
         .badge-rdp { background: rgba(255, 143, 171, 0.2); color: #ff8fab; }
+        .badge-vnc { background: rgba(0, 0, 255, 0.2); color: #0000FF; }
+        .badge-smb { background: rgba(156, 39, 176, 0.2); color: #9c27b0; }
+        .badge-sip { background: rgba(0, 188, 212, 0.2); color: #00bcd4; }
 
-        .leaflet-popup-content-wrapper {
-            background: rgba(26, 31, 58, 0.98);
-            color: #e0e0e0;
-            border: 1px solid #00ff88;
-            border-radius: 8px;
+        .attack-item strong {
+            color: var(--primary-color);
+            font-weight: 600;
         }
 
-        .leaflet-popup-tip {
-            background: rgba(26, 31, 58, 0.98);
+        .attack-item .time {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            display: block;
+            margin-top: 0.25rem;
         }
 
-        /* Custom scrollbar */
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .sidebar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 3px;
-        }
-
-        .sidebar::-webkit-scrollbar-thumb {
-            background: #00ff88;
-            border-radius: 3px;
-        }
-
-        .demo-notice {
-            background: rgba(255, 193, 7, 0.2);
-            border: 1px solid #ffc107;
-            color: #ffc107;
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
-            text-align: center;
-        }
-
-        .attack-line {
-            stroke: #ff6b6b;
-            stroke-width: 2;
-            fill: none;
-            opacity: 0.7;
-            animation: drawLine 1s ease-out forwards;
-        }
-
-        @keyframes drawLine {
-            from {
-                stroke-dashoffset: 1000;
-                opacity: 0;
-            }
-            to {
-                stroke-dashoffset: 0;
-                opacity: 0.7;
-            }
-        }
-
+        /* Top Attackers */
         .top-attackers {
-            margin-top: 1.5rem;
+            margin-top: var(--spacing-lg);
         }
 
         .top-attacker-item {
             display: flex;
             justify-content: space-between;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            background: rgba(0, 255, 136, 0.05);
-            border-radius: 4px;
+            align-items: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            background: rgba(226, 0, 116, 0.05);
+            border-radius: var(--radius-md);
+            font-size: var(--font-xs);
+            transition: all 0.15s ease;
+        }
+
+        .top-attacker-item:hover {
+            background: rgba(226, 0, 116, 0.1);
         }
 
         .top-attacker-item .country {
-            color: #00ff88;
+            color: var(--text-primary);
             font-weight: 600;
         }
 
         .top-attacker-item .count {
-            color: #ff6b6b;
+            color: var(--primary-color);
             font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        /* Leaflet Popup Customization */
+        .leaflet-popup-content-wrapper {
+            background: rgba(26, 26, 26, 0.98);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(26, 26, 26, 0.98);
+        }
+
+        /* Custom Scrollbar */
+        .side-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .side-panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .side-panel {
+                width: 300px;
+            }
+            
+            .navbar-stats {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Top Navigation -->
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h2>Initializing T-Pot Attack Map</h2>
+            <p>Loading real-time cybersecurity data...</p>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
     <nav class="top-navbar">
-        <div class="navbar-brand">
-            <i class="fas fa-shield-halved"></i>
-            <span>T-Pot Attack Map - DEMO</span>
-        </div>
-        
-        <div class="stats-section">
-            <div class="stat-item">
-                <div class="stat-label">1 Minute</div>
-                <div class="stat-value" id="stat-1m">0</div>
+        <div class="navbar-content flex-between">
+            <div class="navbar-brand flex-center">
+                <i class="fas fa-shield-halved"></i>
+                <span>T-Pot Attack Map</span>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">1 Hour</div>
-                <div class="stat-value" id="stat-1h">0</div>
+            
+            <!-- T-Pot Stats in Header -->
+            <div class="navbar-stats">
+                <div class="stats-group">
+                    <div class="stats-header-title">
+                        <i class="fas fa-satellite-dish fa-lg"></i>
+                        <span id="honeypotStatsHeader">Attacks</span>
+                    </div>
+                    <div class="stats-inline">
+                        <div class="stat-inline-item flex-center">
+                            <span class="stat-inline-label">1m</span>
+                            <span class="stat-inline-value" id="last_1m">-</span>
+                        </div>
+                        <div class="stat-separator">|</div>
+                        <div class="stat-inline-item flex-center">
+                            <span class="stat-inline-label">1h</span>
+                            <span class="stat-inline-value" id="last_1h">-</span>
+                        </div>
+                        <div class="stat-separator">|</div>
+                        <div class="stat-inline-item flex-center">
+                            <span class="stat-inline-label">24h</span>
+                            <span class="stat-inline-value" id="last_24h">-</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-label">24 Hours</div>
-                <div class="stat-value" id="stat-24h">0</div>
+            
+            <div class="navbar-controls">
+                <div class="connection-status" id="connection-status">
+                    <div class="status-indicator" id="status-indicator"></div>
+                    <span id="status-text">Mock Data Active</span>
+                </div>
             </div>
-        </div>
-        
-        <div class="connection-status">
-            <div class="status-indicator"></div>
-            <span>Mock Data Active</span>
         </div>
     </nav>
 
-    <!-- Map Container -->
-    <div id="map-container">
-        <div id="map"></div>
-        
-        <!-- Sidebar with Recent Attacks -->
-        <div class="sidebar">
-            <div class="demo-notice">
-                <i class="fas fa-info-circle"></i> Demo Mode - Simulated Attack Data
-            </div>
+    <!-- Main Container -->
+    <div class="main-container">
+        <div id="map-container">
+            <div id="map"></div>
             
-            <h3>
-                <i class="fas fa-bolt"></i>
-                Recent Attacks
-            </h3>
-            <ul class="attack-list" id="attack-list">
-                <!-- Attack items will be added here dynamically -->
-            </ul>
+            <!-- Side Panel -->
+            <div class="side-panel">
+                <div class="panel-content">
+                    <div class="demo-notice">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Demo Mode - Simulated Attack Data</span>
+                    </div>
+                    
+                    <div class="panel-section">
+                        <div class="section-header">
+                            <i class="fas fa-bolt"></i>
+                            <h3>Recent Attacks</h3>
+                        </div>
+                        <ul class="attack-list" id="attack-list">
+                            <!-- Attack items will be added here dynamically -->
+                        </ul>
+                    </div>
 
-            <div class="top-attackers">
-                <h3>
-                    <i class="fas fa-ranking-star"></i>
-                    Top Attackers
-                </h3>
-                <div id="top-attackers-list">
-                    <!-- Top attackers will be added here -->
+                    <div class="panel-section top-attackers">
+                        <div class="section-header">
+                            <i class="fas fa-ranking-star"></i>
+                            <h3>Top Attackers</h3>
+                        </div>
+                        <div id="top-attackers-list">
+                            <!-- Top attackers will be added here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -364,35 +615,57 @@
         const attackLines = L.layerGroup().addTo(map);
         const markers = L.layerGroup().addTo(map);
 
-        // Mock data sources - Common attacker locations
+        // Mock data sources - Common attacker locations with ISO codes
         const attackSources = [
-            { country: 'China', lat: 35.8617, lng: 104.1954, city: 'Beijing' },
-            { country: 'Russia', lat: 55.7558, lng: 37.6173, city: 'Moscow' },
-            { country: 'USA', lat: 37.7749, lng: -122.4194, city: 'San Francisco' },
-            { country: 'Brazil', lat: -23.5505, lng: -46.6333, city: 'São Paulo' },
-            { country: 'India', lat: 28.6139, lng: 77.2090, city: 'New Delhi' },
-            { country: 'Germany', lat: 52.5200, lng: 13.4050, city: 'Berlin' },
-            { country: 'UK', lat: 51.5074, lng: -0.1278, city: 'London' },
-            { country: 'Japan', lat: 35.6762, lng: 139.6503, city: 'Tokyo' },
-            { country: 'South Korea', lat: 37.5665, lng: 126.9780, city: 'Seoul' },
-            { country: 'Netherlands', lat: 52.3676, lng: 4.9041, city: 'Amsterdam' },
-            { country: 'Ukraine', lat: 50.4501, lng: 30.5234, city: 'Kyiv' },
-            { country: 'Vietnam', lat: 21.0285, lng: 105.8542, city: 'Hanoi' },
-            { country: 'Iran', lat: 35.6892, lng: 51.3890, city: 'Tehran' },
-            { country: 'Turkey', lat: 41.0082, lng: 28.9784, city: 'Istanbul' },
-            { country: 'France', lat: 48.8566, lng: 2.3522, city: 'Paris' }
+            { country: 'China', iso_code: 'CN', lat: 35.8617, lng: 104.1954, continent_code: 'AS' },
+            { country: 'Russia', iso_code: 'RU', lat: 55.7558, lng: 37.6173, continent_code: 'EU' },
+            { country: 'USA', iso_code: 'US', lat: 37.7749, lng: -122.4194, continent_code: 'NA' },
+            { country: 'Brazil', iso_code: 'BR', lat: -23.5505, lng: -46.6333, continent_code: 'SA' },
+            { country: 'India', iso_code: 'IN', lat: 28.6139, lng: 77.2090, continent_code: 'AS' },
+            { country: 'Germany', iso_code: 'DE', lat: 52.5200, lng: 13.4050, continent_code: 'EU' },
+            { country: 'United Kingdom', iso_code: 'GB', lat: 51.5074, lng: -0.1278, continent_code: 'EU' },
+            { country: 'Japan', iso_code: 'JP', lat: 35.6762, lng: 139.6503, continent_code: 'AS' },
+            { country: 'South Korea', iso_code: 'KR', lat: 37.5665, lng: 126.9780, continent_code: 'AS' },
+            { country: 'Netherlands', iso_code: 'NL', lat: 52.3676, lng: 4.9041, continent_code: 'EU' },
+            { country: 'Ukraine', iso_code: 'UA', lat: 50.4501, lng: 30.5234, continent_code: 'EU' },
+            { country: 'Vietnam', iso_code: 'VN', lat: 21.0285, lng: 105.8542, continent_code: 'AS' },
+            { country: 'Iran', iso_code: 'IR', lat: 35.6892, lng: 51.3890, continent_code: 'AS' },
+            { country: 'Turkey', iso_code: 'TR', lat: 41.0082, lng: 28.9784, continent_code: 'AS' },
+            { country: 'France', iso_code: 'FR', lat: 48.8566, lng: 2.3522, continent_code: 'EU' },
+            { country: 'Poland', iso_code: 'PL', lat: 52.2297, lng: 21.0122, continent_code: 'EU' },
+            { country: 'Romania', iso_code: 'RO', lat: 44.4268, lng: 26.1025, continent_code: 'EU' },
+            { country: 'Mexico', iso_code: 'MX', lat: 19.4326, lng: -99.1332, continent_code: 'NA' },
+            { country: 'Indonesia', iso_code: 'ID', lat: -6.2088, lng: 106.8456, continent_code: 'AS' },
+            { country: 'Thailand', iso_code: 'TH', lat: 13.7563, lng: 100.5018, continent_code: 'AS' }
         ];
 
-        // Your honeypot location (example: Frankfurt, Germany)
-        const honeypotLocation = { lat: 50.1109, lng: 8.6821, city: 'Frankfurt' };
+        // Destination honeypot locations (T-Pot instances)
+        const honeypotLocations = [
+            { lat: 50.1109, lng: 8.6821, country_name: 'Germany', iso_code: 'DE', hostname: 'finance' },
+            { lat: 40.7128, lng: -74.0060, country_name: 'USA', iso_code: 'US', hostname: 'webapp' },
+            { lat: 51.5074, lng: -0.1278, country_name: 'United Kingdom', iso_code: 'GB', hostname: 'research' }
+        ];
 
-        // Protocol definitions
+        // Protocol and honeypot definitions matching T-Pot
         const protocols = [
-            { name: 'SSH', port: 22, color: '#ff6b6b', class: 'ssh' },
-            { name: 'HTTP', port: 80, color: '#4dabf7', class: 'http' },
-            { name: 'FTP', port: 21, color: '#ffd93d', class: 'ftp' },
-            { name: 'Telnet', port: 23, color: '#a78bfa', class: 'telnet' },
-            { name: 'RDP', port: 3389, color: '#ff8fab', class: 'rdp' }
+            { name: 'SSH', port: 22, color: '#ff6b6b', class: 'ssh', honeypot: 'Cowrie' },
+            { name: 'HTTP', port: 80, color: '#4dabf7', class: 'http', honeypot: 'Tanner' },
+            { name: 'FTP', port: 21, color: '#ffd93d', class: 'ftp', honeypot: 'Heralding' },
+            { name: 'Telnet', port: 23, color: '#a78bfa', class: 'telnet', honeypot: 'Cowrie' },
+            { name: 'RDP', port: 3389, color: '#ff8fab', class: 'rdp', honeypot: 'RDPy' },
+            { name: 'VNC', port: 5900, color: '#0000FF', class: 'vnc', honeypot: 'Heralding' },
+            { name: 'SMB', port: 445, color: '#9c27b0', class: 'smb', honeypot: 'Dionaea' },
+            { name: 'SIP', port: 5060, color: '#00bcd4', class: 'sip', honeypot: 'SentryPeer' }
+        ];
+
+        // IP reputation types
+        const ipRepTypes = [
+            'Reputation Unknown',
+            'Known Scanner',
+            'Known Attacker',
+            'Tor Exit Node',
+            'Suspicious Activity',
+            'Botnet Member'
         ];
 
         // Statistics
@@ -404,36 +677,51 @@
 
         let attackHistory = [];
         let countryStats = {};
+        let eventCounter = 1000;
 
-        // Add honeypot marker
-        const honeypotMarker = L.circleMarker([honeypotLocation.lat, honeypotLocation.lng], {
-            radius: 8,
-            fillColor: '#00ff88',
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.8
-        }).addTo(markers);
+        // Add honeypot markers
+        honeypotLocations.forEach(location => {
+            const marker = L.circleMarker([location.lat, location.lng], {
+                radius: 8,
+                fillColor: '#e20074',
+                color: '#fff',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(markers);
 
-        honeypotMarker.bindPopup(`
-            <div style="text-align: center; padding: 0.5rem;">
-                <strong style="color: #00ff88; font-size: 1.1rem;">🛡️ Your Honeypot</strong><br>
-                <span style="color: #888; font-size: 0.85rem;">${honeypotLocation.city}</span>
-            </div>
-        `);
+            marker.bindPopup(`
+                <div style="text-align: center; padding: 0.5rem;">
+                    <strong style="color: #e20074; font-size: 1.1rem;">🛡️ T-Pot Honeypot</strong><br>
+                    <span style="color: #b0b0b0; font-size: 0.85rem;">${location.hostname}<br>${location.country_name}</span>
+                </div>
+            `);
+        });
 
         // Generate random IP address
         function generateIP() {
             return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
         }
 
-        // Format time
-        function formatTime(date) {
-            return date.toLocaleTimeString('en-US', { hour12: false });
+        // Format time to match T-Pot format
+        function formatEventTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Format time for display
+        function formatTime(dateString) {
+            return dateString.split(' ')[1]; // Return just the time part
         }
 
         // Create attack animation
-        function createAttackLine(source, destination, protocol) {
+        function createAttackLine(srcLat, srcLng, dstLat, dstLng, color) {
             // Create curved line using D3
             const svg = d3.select(map.getPanes().overlayPane).append("svg")
                 .attr("class", "attack-line-svg")
@@ -444,13 +732,13 @@
                 .style("height", "100%")
                 .style("pointer-events", "none");
 
-            const sourcePoint = map.latLngToLayerPoint([source.lat, source.lng]);
-            const destPoint = map.latLngToLayerPoint([destination.lat, destination.lng]);
+            const sourcePoint = map.latLngToLayerPoint([srcLat, srcLng]);
+            const destPoint = map.latLngToLayerPoint([dstLat, dstLng]);
 
             // Create curved path
             const path = svg.append("path")
                 .attr("d", `M ${sourcePoint.x},${sourcePoint.y} Q ${(sourcePoint.x + destPoint.x) / 2},${Math.min(sourcePoint.y, destPoint.y) - 100} ${destPoint.x},${destPoint.y}`)
-                .attr("stroke", protocol.color)
+                .attr("stroke", color)
                 .attr("stroke-width", 2)
                 .attr("fill", "none")
                 .attr("opacity", 0.8)
@@ -476,9 +764,9 @@
             }, 2500);
 
             // Add source marker
-            const sourceMarker = L.circleMarker([source.lat, source.lng], {
+            const sourceMarker = L.circleMarker([srcLat, srcLng], {
                 radius: 5,
-                fillColor: protocol.color,
+                fillColor: color,
                 color: '#fff',
                 weight: 1,
                 opacity: 0.8,
@@ -487,11 +775,9 @@
 
             sourceMarker.bindPopup(`
                 <div style="padding: 0.5rem;">
-                    <strong style="color: ${protocol.color};">⚠️ Attack Source</strong><br>
-                    <span style="color: #888; font-size: 0.85rem;">
-                        ${source.city}, ${source.country}<br>
-                        Protocol: ${protocol.name}<br>
-                        Port: ${protocol.port}
+                    <strong style="color: ${color};">⚠️ Attack Source</strong><br>
+                    <span style="color: #b0b0b0; font-size: 0.85rem;">
+                        Location: ${srcLat.toFixed(4)}, ${srcLng.toFixed(4)}
                     </span>
                 </div>
             `);
@@ -502,21 +788,40 @@
             }, 5000);
         }
 
-        // Simulate attack event
+        // Simulate attack event using T-Pot webhook data structure
         function simulateAttack() {
             const source = attackSources[Math.floor(Math.random() * attackSources.length)];
             const protocol = protocols[Math.floor(Math.random() * protocols.length)];
-            const sourceIP = generateIP();
-            const timestamp = new Date();
+            const destination = honeypotLocations[Math.floor(Math.random() * honeypotLocations.length)];
+            const ipRep = ipRepTypes[Math.floor(Math.random() * ipRepTypes.length)];
 
-            // Create attack object
-            const attack = {
-                source,
-                protocol,
-                sourceIP,
-                timestamp,
-                honeypotPort: protocol.port + Math.floor(Math.random() * 10)
+            // Create webhook data matching T-Pot format
+            const webhookData = {
+                protocol: protocol.name,
+                color: protocol.color,
+                iso_code: source.iso_code,
+                honeypot: protocol.honeypot,
+                src_port: Math.floor(Math.random() * 50000) + 10000,
+                event_time: formatEventTime(),
+                src_lat: source.lat,
+                src_ip: generateIP(),
+                ip_rep: ipRep,
+                type: 'Traffic',
+                dst_long: destination.lng,
+                continent_code: source.continent_code,
+                dst_lat: destination.lat,
+                event_count: ++eventCounter,
+                country: source.country,
+                src_long: source.lng,
+                dst_port: protocol.port,
+                dst_ip: generateIP(),
+                dst_iso_code: destination.iso_code,
+                dst_country_name: destination.country_name,
+                tpot_hostname: destination.hostname
             };
+
+            // Log webhook data to console for demo purposes
+            console.log('📡 Webhook Data:', webhookData);
 
             // Update statistics
             stats['1m']++;
@@ -531,14 +836,14 @@
 
             // Update UI
             updateStats();
-            addAttackToList(attack);
+            addAttackToList(webhookData, protocol);
             updateTopAttackers();
 
             // Create visual attack
-            createAttackLine(source, honeypotLocation, protocol);
+            createAttackLine(webhookData.src_lat, webhookData.src_long, webhookData.dst_lat, webhookData.dst_long, webhookData.color);
 
             // Store in history
-            attackHistory.push(attack);
+            attackHistory.push(webhookData);
             if (attackHistory.length > 100) {
                 attackHistory.shift();
             }
@@ -546,21 +851,24 @@
 
         // Update statistics display
         function updateStats() {
-            document.getElementById('stat-1m').textContent = stats['1m'];
-            document.getElementById('stat-1h').textContent = stats['1h'];
-            document.getElementById('stat-24h').textContent = stats['24h'];
+            document.getElementById('last_1m').textContent = stats['1m'];
+            document.getElementById('last_1h').textContent = stats['1h'];
+            document.getElementById('last_24h').textContent = stats['24h'];
         }
 
         // Add attack to sidebar list
-        function addAttackToList(attack) {
+        function addAttackToList(webhookData, protocol) {
             const list = document.getElementById('attack-list');
             const item = document.createElement('li');
-            item.className = `attack-item ${attack.protocol.class}`;
+            item.className = `attack-item ${protocol.class}`;
             item.innerHTML = `
-                <span class="protocol-badge badge-${attack.protocol.class}">${attack.protocol.name}</span><br>
-                <strong>${attack.source.country}</strong> → ${honeypotLocation.city}<br>
-                <small>IP: ${attack.sourceIP} | Port: ${attack.honeypotPort}</small>
-                <span class="time">${formatTime(attack.timestamp)}</span>
+                <span class="protocol-badge badge-${protocol.class}">${webhookData.protocol}</span><br>
+                <strong>${webhookData.country}</strong> → ${webhookData.tpot_hostname}<br>
+                <small>
+                    ${webhookData.src_ip}:${webhookData.src_port} → ${webhookData.dst_ip}:${webhookData.dst_port}<br>
+                    Honeypot: ${webhookData.honeypot} | ${webhookData.ip_rep}
+                </small>
+                <span class="time">${formatTime(webhookData.event_time)} | Event #${webhookData.event_count}</span>
             `;
             
             list.insertBefore(item, list.firstChild);
@@ -609,6 +917,10 @@
 
         // Start the simulation after page load
         setTimeout(() => {
+            // Hide loading screen
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.classList.add('hidden');
+            
             console.log('🎯 T-Pot Attack Map Demo Started');
             console.log('📊 Simulating honeypot attacks with mock data');
             console.log('🗺️  Using Leaflet.js for mapping');
@@ -617,7 +929,7 @@
             console.log('This demo simulates WebSocket data that would normally come from:');
             console.log('  Honeypots → Elasticsearch → DataServer → Redis → AttackMapServer → Browser');
             startAttackSimulation();
-        }, 1000);
+        }, 2000);
 
         // Handle map resize
         window.addEventListener('resize', () => {
