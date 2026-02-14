@@ -1191,9 +1191,7 @@
 
             // Update UI
             updateStats();
-            addAttackToList(webhookData, protocol);
             addAttackToTable(webhookData);
-            updateTopAttackers();
 
             // Create visual attack line animation with webhook data
             createAttackLine(webhookData.src_lat, webhookData.src_long, webhookData.dst_lat, webhookData.dst_long, webhookData.color, webhookData);
@@ -1212,28 +1210,7 @@
             document.getElementById('last_24h').textContent = stats['24h'];
         }
 
-        // Add attack to sidebar list
-        function addAttackToList(webhookData, protocol) {
-            const list = document.getElementById('attack-list');
-            const item = document.createElement('li');
-            item.className = `attack-item ${protocol.class}`;
-            item.innerHTML = `
-                <span class="protocol-badge badge-${protocol.class}">${webhookData.protocol}</span><br>
-                <strong>${webhookData.country}</strong> → ${webhookData.tpot_hostname}<br>
-                <small>
-                    ${webhookData.src_ip}:${webhookData.src_port} → ${webhookData.dst_ip}:${webhookData.dst_port}<br>
-                    Honeypot: ${webhookData.honeypot} | ${webhookData.ip_rep}
-                </small>
-                <span class="time">${formatTime(webhookData.event_time)} | Event #${webhookData.event_count}</span>
-            `;
-            
-            list.insertBefore(item, list.firstChild);
-            
-            // Keep only last 20 attacks
-            while (list.children.length > 20) {
-                list.removeChild(list.lastChild);
-            }
-        }
+
 
         // Add attack to live attacks table
         function addAttackToTable(webhookData) {
@@ -1282,20 +1259,6 @@
         }
 
         // Update top attackers list
-        function updateTopAttackers() {
-            const sorted = Object.entries(countryStats)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10);
-
-            const container = document.getElementById('top-attackers-list');
-            container.innerHTML = sorted.map(([country, count]) => `
-                <div class="top-attacker-item">
-                    <span class="country">${country}</span>
-                    <span class="count">${count}</span>
-                </div>
-            `).join('');
-        }
-
         // Reset 1-minute counter
         setInterval(() => {
             stats['1m'] = 0;
@@ -1337,18 +1300,14 @@
                 const cachedEvents = await attackCache.getRecentEvents(20);
                 if (cachedEvents.length > 0) {
                     console.log(`[CACHE] Restored ${cachedEvents.length} cached events`);
-                    // Display cached events in the sidebar
+                    // Update stats from cached events
                     cachedEvents.forEach(event => {
-                        const protocol = protocols.find(p => p.name === event.protocol) || protocols[0];
-                        addAttackToList(event, protocol);
-                        
                         // Update country stats from cache
                         if (!countryStats[event.country]) {
                             countryStats[event.country] = 0;
                         }
                         countryStats[event.country]++;
                     });
-                    updateTopAttackers();
                 }
             } catch (error) {
                 console.error('[CACHE] Failed to initialize:', error);
