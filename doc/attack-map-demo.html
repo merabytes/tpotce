@@ -268,18 +268,129 @@
             left: 0;
             right: 0;
             bottom: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         #map-container {
             position: relative;
-            height: 100%;
-            width: 100%;
+            flex: 1;
+            min-height: 400px;
         }
 
         #map {
             height: 100%;
             width: 100%;
             background: var(--bg-primary);
+        }
+
+        /* Live Attacks Table Container */
+        .attacks-table-container {
+            height: 300px;
+            overflow: auto;
+            background: var(--bg-secondary);
+            border-top: 2px solid var(--primary-color);
+            padding: var(--spacing-md);
+        }
+
+        .attacks-table-container h3 {
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-md);
+            font-size: var(--font-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: var(--font-xs);
+            color: var(--text-primary);
+        }
+
+        .data-table thead {
+            background: var(--bg-tertiary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table th {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-bottom: 1px solid var(--border-primary);
+            font-family: var(--font-mono);
+        }
+
+        .data-table tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(226, 0, 116, 0.1);
+        }
+
+        .data-table tbody tr.new-attack {
+            animation: highlightRow 1s ease;
+        }
+
+        @keyframes highlightRow {
+            0% {
+                background: rgba(226, 0, 116, 0.3);
+            }
+            100% {
+                background: transparent;
+            }
+        }
+
+        .attacks-table-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .attacks-table-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .attacks-table-container::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        /* Leaflet Popup Table Styling */
+        .popup-table {
+            width: 100%;
+            font-size: 0.85rem;
+            border-collapse: collapse;
+        }
+
+        .popup-table td {
+            padding: 0.3rem 0.5rem;
+            border-bottom: 1px solid rgba(226, 0, 116, 0.3);
+        }
+
+        .popup-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .popup-table td:last-child {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+        }
+
+        .popup-table tr:last-child td {
+            border-bottom: none;
         }
 
         /* Sidebar Panel */
@@ -579,6 +690,34 @@
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Live Attacks Table -->
+        <div class="attacks-table-container">
+            <h3>
+                <i class="fas fa-table"></i>
+                Live Attacks Feed
+            </h3>
+            <table class="data-table" id="live-attacks-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Source IP</th>
+                        <th>IP Reputation</th>
+                        <th>Source Country</th>
+                        <th>Source Port</th>
+                        <th>Dest IP</th>
+                        <th>Dest Country</th>
+                        <th>Dest Port</th>
+                        <th>Protocol</th>
+                        <th>Honeypot</th>
+                        <th>Hostname</th>
+                    </tr>
+                </thead>
+                <tbody id="live-attacks-tbody">
+                    <!-- Attack rows will be added here dynamically -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -983,7 +1122,7 @@
         }
 
         // Create attack animation
-        function createAttackLine(srcLat, srcLng, dstLat, dstLng, color) {
+        function createAttackLine(srcLat, srcLng, dstLat, dstLng, color, webhookData) {
             // Create curved line using D3
             const svg = d3.select(map.getPanes().overlayPane).append("svg")
                 .attr("class", "attack-line-svg")
@@ -1025,7 +1164,7 @@
                 svg.remove();
             }, 2500);
 
-            // Add source marker
+            // Add source marker with detailed popup
             const sourceMarker = L.circleMarker([srcLat, srcLng], {
                 radius: 5,
                 fillColor: color,
@@ -1037,12 +1176,24 @@
 
             sourceMarker.bindPopup(`
                 <div style="padding: 0.5rem;">
-                    <strong style="color: ${color};">⚠️ Attack Source</strong><br>
-                    <span style="color: #b0b0b0; font-size: 0.85rem;">
-                        Location: ${srcLat.toFixed(4)}, ${srcLng.toFixed(4)}
-                    </span>
+                    <strong style="color: ${color}; font-size: 1.1rem;">⚠️ Attack Source</strong><br>
+                    <table class="popup-table" style="margin-top: 0.5rem;">
+                        <tr><td>Country:</td><td>${webhookData.country}</td></tr>
+                        <tr><td>Source IP:</td><td>${webhookData.src_ip}</td></tr>
+                        <tr><td>Source Port:</td><td>${webhookData.src_port}</td></tr>
+                        <tr><td>IP Reputation:</td><td>${webhookData.ip_rep}</td></tr>
+                        <tr><td>Protocol:</td><td>${webhookData.protocol}</td></tr>
+                        <tr><td>Honeypot:</td><td>${webhookData.honeypot}</td></tr>
+                        <tr><td>Target:</td><td>${webhookData.dst_ip}:${webhookData.dst_port}</td></tr>
+                        <tr><td>Destination:</td><td>${webhookData.dst_country_name}</td></tr>
+                        <tr><td>Hostname:</td><td>${webhookData.tpot_hostname}</td></tr>
+                        <tr><td>Event Count:</td><td>#${webhookData.event_count}</td></tr>
+                    </table>
                 </div>
-            `);
+            `, {
+                maxWidth: 350,
+                className: 'attack-popup'
+            });
 
             // Remove marker after a while
             setTimeout(() => {
@@ -1104,10 +1255,11 @@
             // Update UI
             updateStats();
             addAttackToList(webhookData, protocol);
+            addAttackToTable(webhookData);
             updateTopAttackers();
 
-            // Create visual attack line animation
-            createAttackLine(webhookData.src_lat, webhookData.src_long, webhookData.dst_lat, webhookData.dst_long, webhookData.color);
+            // Create visual attack line animation with webhook data
+            createAttackLine(webhookData.src_lat, webhookData.src_long, webhookData.dst_lat, webhookData.dst_long, webhookData.color, webhookData);
 
             // Store in history
             attackHistory.push(webhookData);
@@ -1144,6 +1296,52 @@
             while (list.children.length > 20) {
                 list.removeChild(list.lastChild);
             }
+        }
+
+        // Add attack to live attacks table
+        function addAttackToTable(webhookData) {
+            const tbody = document.getElementById('live-attacks-tbody');
+            const row = document.createElement('tr');
+            row.className = 'new-attack';
+            
+            row.innerHTML = `
+                <td>${formatTime(webhookData.event_time)}</td>
+                <td>${webhookData.src_ip}</td>
+                <td style="color: ${getReputationColor(webhookData.ip_rep)};">${webhookData.ip_rep}</td>
+                <td>${webhookData.country}</td>
+                <td>${webhookData.src_port}</td>
+                <td>${webhookData.dst_ip}</td>
+                <td>${webhookData.dst_country_name}</td>
+                <td>${webhookData.dst_port}</td>
+                <td style="color: ${webhookData.color};">${webhookData.protocol}</td>
+                <td>${webhookData.honeypot}</td>
+                <td>${webhookData.tpot_hostname}</td>
+            `;
+            
+            tbody.insertBefore(row, tbody.firstChild);
+            
+            // Remove animation class after it completes
+            setTimeout(() => {
+                row.classList.remove('new-attack');
+            }, 1000);
+            
+            // Keep only last 100 attacks in table
+            while (tbody.children.length > 100) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+
+        // Get color based on IP reputation
+        function getReputationColor(reputation) {
+            const colors = {
+                'Known Attacker': '#ff6b6b',
+                'Known Scanner': '#ffd93d',
+                'Tor Exit Node': '#a78bfa',
+                'Suspicious Activity': '#ff8fab',
+                'Botnet Member': '#ff4444',
+                'Reputation Unknown': '#b0b0b0'
+            };
+            return colors[reputation] || '#b0b0b0';
         }
 
         // Update top attackers list
