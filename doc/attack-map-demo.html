@@ -1042,6 +1042,7 @@
 
         // Destination honeypot locations (T-Pot instances)
         const honeypotLocations = [
+            { lat: 40.4168, lng: -3.7038, country_name: 'Spain', iso_code: 'ES', hostname: 'madrid-01' },
             { lat: 50.1109, lng: 8.6821, country_name: 'Germany', iso_code: 'DE', hostname: 'finance' },
             { lat: 40.7128, lng: -74.0060, country_name: 'USA', iso_code: 'US', hostname: 'webapp' },
             { lat: 51.5074, lng: -0.1278, country_name: 'United Kingdom', iso_code: 'GB', hostname: 'research' }
@@ -1121,84 +1122,185 @@
             return dateString.split(' ')[1]; // Return just the time part
         }
 
-        // Create attack animation
-        function createAttackLine(srcLat, srcLng, dstLat, dstLng, color, webhookData) {
-            // Create curved line using D3
-            const svg = d3.select(map.getPanes().overlayPane).append("svg")
-                .attr("class", "attack-line-svg")
-                .style("position", "absolute")
-                .style("top", "0")
-                .style("left", "0")
-                .style("width", "100%")
-                .style("height", "100%")
-                .style("pointer-events", "none");
+        // Add circle marker for attack source
+        function addCircle(country, iso_code, src_ip, ip_rep, color, latLng, protocol) {
+            return new Promise((resolve) => {
+                const circle = L.circle(latLng, {
+                    radius: 50000, // 50km radius
+                    fillColor: color,
+                    color: color,
+                    weight: 2,
+                    opacity: 0.6,
+                    fillOpacity: 0.2
+                }).addTo(markers);
 
-            const sourcePoint = map.latLngToLayerPoint([srcLat, srcLng]);
-            const destPoint = map.latLngToLayerPoint([dstLat, dstLng]);
-
-            // Create curved path
-            const path = svg.append("path")
-                .attr("d", `M ${sourcePoint.x},${sourcePoint.y} Q ${(sourcePoint.x + destPoint.x) / 2},${Math.min(sourcePoint.y, destPoint.y) - 100} ${destPoint.x},${destPoint.y}`)
-                .attr("stroke", color)
-                .attr("stroke-width", 2)
-                .attr("fill", "none")
-                .attr("opacity", 0.8)
-                .attr("stroke-dasharray", "1000")
-                .attr("stroke-dashoffset", "1000");
-
-            // Animate the line
-            path.transition()
-                .duration(1000)
-                .attr("stroke-dashoffset", 0)
-                .on("end", function() {
-                    // Fade out after animation
-                    d3.select(this).transition()
-                        .delay(1000)
-                        .duration(500)
-                        .attr("opacity", 0)
-                        .remove();
+                circle.bindPopup(`
+                    <div style="padding: 0.5rem;">
+                        <strong style="color: ${color};">📍 Attack Origin</strong><br>
+                        <table class="popup-table" style="margin-top: 0.5rem;">
+                            <tr><td>Country:</td><td>${country} (${iso_code})</td></tr>
+                            <tr><td>Source IP:</td><td>${src_ip}</td></tr>
+                            <tr><td>Reputation:</td><td>${ip_rep}</td></tr>
+                            <tr><td>Protocol:</td><td>${protocol}</td></tr>
+                        </table>
+                    </div>
+                `, {
+                    maxWidth: 300,
+                    className: 'attack-popup'
                 });
 
-            // Remove SVG after animation
-            setTimeout(() => {
-                svg.remove();
-            }, 2500);
-
-            // Add source marker with detailed popup
-            const sourceMarker = L.circleMarker([srcLat, srcLng], {
-                radius: 5,
-                fillColor: color,
-                color: '#fff',
-                weight: 1,
-                opacity: 0.8,
-                fillOpacity: 0.6
-            }).addTo(markers);
-
-            sourceMarker.bindPopup(`
-                <div style="padding: 0.5rem;">
-                    <strong style="color: ${color}; font-size: 1.1rem;">⚠️ Attack Source</strong><br>
-                    <table class="popup-table" style="margin-top: 0.5rem;">
-                        <tr><td>Country:</td><td>${webhookData.country}</td></tr>
-                        <tr><td>Source IP:</td><td>${webhookData.src_ip}</td></tr>
-                        <tr><td>Source Port:</td><td>${webhookData.src_port}</td></tr>
-                        <tr><td>IP Reputation:</td><td>${webhookData.ip_rep}</td></tr>
-                        <tr><td>Protocol:</td><td>${webhookData.protocol}</td></tr>
-                        <tr><td>Honeypot:</td><td>${webhookData.honeypot}</td></tr>
-                        <tr><td>Target:</td><td>${webhookData.dst_ip}:${webhookData.dst_port}</td></tr>
-                        <tr><td>Destination:</td><td>${webhookData.dst_country_name}</td></tr>
-                        <tr><td>Hostname:</td><td>${webhookData.tpot_hostname}</td></tr>
-                        <tr><td>Event Count:</td><td>#${webhookData.event_count}</td></tr>
-                    </table>
-                </div>
-            `, {
-                maxWidth: 350,
-                className: 'attack-popup'
+                // Remove circle after animation
+                setTimeout(() => {
+                    markers.removeLayer(circle);
+                    resolve();
+                }, 4000);
             });
+        }
 
-            // Remove marker after a while
-            setTimeout(() => {
-                markers.removeLayer(sourceMarker);
-            }, 5000);
+        // Add destination marker for honeypot
+        function addMarker(dst_country, dst_iso_code, dst_ip, hostname, latLng) {
+            return new Promise((resolve) => {
+                const marker = L.circleMarker(latLng, {
+                    radius: 10,
+                    fillColor: '#e20074',
+                    color: '#fff',
+                    weight: 3,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                }).addTo(markers);
+
+                marker.bindPopup(`
+                    <div style="padding: 0.5rem;">
+                        <strong style="color: #e20074; font-size: 1.1rem;">🛡️ Honeypot Target</strong><br>
+                        <table class="popup-table" style="margin-top: 0.5rem;">
+                            <tr><td>Location:</td><td>${dst_country} (${dst_iso_code})</td></tr>
+                            <tr><td>Hostname:</td><td>${hostname}</td></tr>
+                            <tr><td>Target IP:</td><td>${dst_ip}</td></tr>
+                        </table>
+                    </div>
+                `, {
+                    maxWidth: 300,
+                    className: 'attack-popup'
+                });
+
+                // Pulse effect
+                marker.setStyle({ fillOpacity: 0.9 });
+                setTimeout(() => {
+                    markers.removeLayer(marker);
+                    resolve();
+                }, 4000);
+            });
+        }
+
+        // Handle particle animation (moving dot along the path)
+        function handleParticle(color, srcPoint) {
+            return new Promise((resolve) => {
+                const svg = d3.select(map.getPanes().overlayPane).append("svg")
+                    .attr("class", "particle-svg")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "100%")
+                    .style("height", "100%")
+                    .style("pointer-events", "none");
+
+                // Create a glowing particle
+                const particle = svg.append("circle")
+                    .attr("cx", srcPoint.x)
+                    .attr("cy", srcPoint.y)
+                    .attr("r", 4)
+                    .attr("fill", color)
+                    .attr("opacity", 0)
+                    .style("filter", "drop-shadow(0 0 4px " + color + ")");
+
+                // Fade in and pulse
+                particle.transition()
+                    .duration(300)
+                    .attr("opacity", 1)
+                    .attr("r", 6)
+                    .transition()
+                    .duration(300)
+                    .attr("r", 4)
+                    .on("end", function() {
+                        setTimeout(() => {
+                            d3.select(this).transition()
+                                .duration(300)
+                                .attr("opacity", 0)
+                                .on("end", function() {
+                                    svg.remove();
+                                    resolve();
+                                });
+                        }, 1000);
+                    });
+            });
+        }
+
+        // Handle traffic animation (animated particles moving along path)
+        function handleTraffic(color, srcPoint, dstPoint, srcLatLng) {
+            return new Promise((resolve) => {
+                const svg = d3.select(map.getPanes().overlayPane).append("svg")
+                    .attr("class", "traffic-svg")
+                    .style("position", "absolute")
+                    .style("top", "0")
+                    .style("left", "0")
+                    .style("width", "100%")
+                    .style("height", "100%")
+                    .style("pointer-events", "none");
+
+                // Calculate control point for bezier curve
+                const midX = (srcPoint.x + dstPoint.x) / 2;
+                const midY = Math.min(srcPoint.y, dstPoint.y) - 100;
+
+                // Create path for particles to follow
+                const pathData = `M ${srcPoint.x},${srcPoint.y} Q ${midX},${midY} ${dstPoint.x},${dstPoint.y}`;
+
+                // Create invisible path for particle movement
+                const pathElement = svg.append("path")
+                    .attr("d", pathData)
+                    .attr("fill", "none")
+                    .attr("stroke", "none");
+
+                // Create multiple particles
+                const numParticles = 5;
+                const particles = [];
+                
+                for (let i = 0; i < numParticles; i++) {
+                    const particle = svg.append("circle")
+                        .attr("r", 3)
+                        .attr("fill", color)
+                        .attr("opacity", 0)
+                        .style("filter", "drop-shadow(0 0 3px " + color + ")");
+                    
+                    particles.push(particle);
+
+                    // Animate each particle with delay
+                    const delay = i * 200;
+                    setTimeout(() => {
+                        const pathLength = pathElement.node().getTotalLength();
+                        
+                        particle
+                            .attr("opacity", 0.8)
+                            .transition()
+                            .duration(2000)
+                            .ease(d3.easeLinear)
+                            .attrTween("transform", function() {
+                                return function(t) {
+                                    const point = pathElement.node().getPointAtLength(t * pathLength);
+                                    return `translate(${point.x}, ${point.y})`;
+                                };
+                            })
+                            .transition()
+                            .duration(300)
+                            .attr("opacity", 0);
+                    }, delay);
+                }
+
+                // Clean up after all animations
+                setTimeout(() => {
+                    svg.remove();
+                    resolve();
+                }, 2500 + (numParticles * 200));
+            });
         }
 
         // Simulate attack event using T-Pot webhook data structure
